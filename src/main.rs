@@ -1,28 +1,49 @@
-use image::{codecs::png::PngEncoder, ColorType, ImageEncoder, ImageFormat, Rgba, RgbaImage};
+use image::{codecs::png::PngEncoder, ColorType, ImageEncoder, ImageFormat, Rgb, RgbImage};
 use itertools::Itertools;
 
-const SPACE_ABOVE: u32 = 5;
-const SPACE_BELOW: u32 = 20;
-const SPACE_LEFT: u32 = 20;
-const SPACE_RIGHT: u32 = 5;
+const SPACE_ABOVE: u32 = 7;
+const SPACE_BELOW: u32 = 19;
+const SPACE_LEFT: u32 = 21;
+const SPACE_RIGHT: u32 = 9;
 const PIXELS_PER_CELSIUS: u32 = 3;
 const PIXELS_PER_DAY: u32 = 25;
 
 fn main() {
 	let data = day_data_from_args();
-	let (all_temps_min, all_temps_max) = data.iter().fold(
-		(i32::MAX, i32::MIN),
-		|(min, max),
-		 DayData {
-		     temp_min, temp_max, ..
-		 }| { (min.min(*temp_min), max.max(*temp_max)) },
-	);
-	let temp_range = all_temps_max.abs_diff(all_temps_min);
+	let (temp_range_min, temp_range_max) = {
+		let (all_temps_min, all_temps_max) = data.iter().fold(
+			(i32::MAX, i32::MIN),
+			|(min, max),
+			 DayData {
+			     temp_min, temp_max, ..
+			 }| { (min.min(*temp_min), max.max(*temp_max)) },
+		);
+		let round_up = match all_temps_max.rem_euclid(400) {
+			0 => 0,
+			n => 400 - n,
+		};
+		(
+			all_temps_min - all_temps_min.rem_euclid(400),
+			all_temps_max + round_up,
+		)
+	};
+	let temp_range = temp_range_max.abs_diff(temp_range_min);
 	let width = PIXELS_PER_DAY * (data.len() - 1) as u32 + SPACE_LEFT + SPACE_RIGHT;
 	let height = temp_range * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE + SPACE_BELOW;
-	let mut canvas = RgbaImage::new(width, height);
-	let colour_min = Rgba::<u8>([0, 0, 255, 255]);
-	let colour_max = Rgba::<u8>([255, 0, 0, 255]);
+	let mut canvas = RgbImage::new(width, height);
+	imageproc::drawing::draw_filled_rect_mut(
+		&mut canvas,
+		imageproc::rect::Rect::at(0, 0).of_size(width, height),
+		Rgb::<u8>([0, 0, 0]),
+	);
+	let colour_min = Rgb::<u8>([0, 148, 255]);
+	let colour_max = Rgb::<u8>([255, 0, 0]);
+	let colour_main_lines = Rgb::<u8>([127, 127, 127]);
+	let colour_grid_lines = Rgb::<u8>([63, 63, 63]);
+	let colour_text = Rgb::<u8>([127, 127, 127]);
+	let font_data: &[u8] = include_bytes!("../RobotoCondensed-Regular.ttf");
+	let font = rusttype::Font::try_from_bytes(font_data).expect("Failed to read font");
+	let font_scale = rusttype::Scale { x: 14.0, y: 14.0 };
 	/*for (
 		index,
 		DayData {
@@ -49,7 +70,7 @@ fn main() {
 			x,
 			y: height - SPACE_BELOW,
 		},
-		Rgba::<u8>([127, 127, 127, 255]),
+		colour_main_lines,
 	);
 	let y = height - SPACE_BELOW + 1;
 	draw_line_segment(
@@ -62,10 +83,10 @@ fn main() {
 			x: width - SPACE_RIGHT,
 			y,
 		},
-		Rgba::<u8>([127, 127, 127, 255]),
+		colour_main_lines,
 	);
-	for day in 0..data.len() as u32 {
-		let x = SPACE_LEFT + day * PIXELS_PER_DAY;
+	for (index, day) in data.iter().enumerate() {
+		let x = SPACE_LEFT + index as u32 * PIXELS_PER_DAY;
 		draw_line_segment(
 			&mut canvas,
 			Point { x, y: SPACE_ABOVE },
@@ -73,11 +94,27 @@ fn main() {
 				x,
 				y: height - SPACE_BELOW,
 			},
-			Rgba::<u8>([127, 127, 127, 127]),
+			colour_grid_lines,
+		);
+		let text = &format!("{}", day.day);
+		let (text_width, _text_height) = imageproc::drawing::text_size(font_scale, &font, text);
+		imageproc::drawing::draw_text_mut(
+			&mut canvas,
+			colour_text,
+			x as i32 - text_width / 2,
+			(height - SPACE_BELOW + 5) as i32,
+			font_scale,
+			&font,
+			text,
 		);
 	}
-	for temp in (0..temp_range / 100 + 1).step_by(2) {
-		let y = SPACE_ABOVE + temp * PIXELS_PER_CELSIUS;
+	for temp in (temp_range_min / 100..=temp_range_max / 100).step_by(2) {
+		let y = SPACE_ABOVE + (temp_range_max / 100).abs_diff(temp) * PIXELS_PER_CELSIUS;
+		let line_colour = if temp == 0 {
+			colour_main_lines
+		} else {
+			colour_grid_lines
+		};
 		draw_line_segment(
 			&mut canvas,
 			Point { x: SPACE_LEFT, y },
@@ -85,38 +122,56 @@ fn main() {
 				x: width - SPACE_RIGHT,
 				y,
 			},
-			Rgba::<u8>([127, 127, 127, 127]),
+			line_colour,
 		);
+		if temp % 4 == 0 {
+			let text = &format!("{}", temp);
+			let (text_width, text_height) = imageproc::drawing::text_size(font_scale, &font, text);
+			imageproc::drawing::draw_text_mut(
+				&mut canvas,
+				colour_text,
+				SPACE_LEFT as i32 - text_width - 3,
+				y as i32 - text_height / 2,
+				font_scale,
+				&font,
+				text,
+			);
+		}
 	}
 	for (index, (start, end)) in data.iter().tuple_windows().enumerate() {
 		let start = Point {
 			x: index as u32 * PIXELS_PER_DAY + SPACE_LEFT,
-			y: start.temp_min.abs_diff(all_temps_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
+			y: start.temp_min.abs_diff(temp_range_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
 		};
 		let end = Point {
 			x: (index + 1) as u32 * PIXELS_PER_DAY + SPACE_LEFT,
-			y: end.temp_min.abs_diff(all_temps_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
+			y: end.temp_min.abs_diff(temp_range_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
 		};
 		draw_line_segment(&mut canvas, start, end, colour_min);
 	}
 	for (index, (start, end)) in data.iter().tuple_windows().enumerate() {
 		let start = Point {
 			x: index as u32 * PIXELS_PER_DAY + SPACE_LEFT,
-			y: start.temp_max.abs_diff(all_temps_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
+			y: start.temp_max.abs_diff(temp_range_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
 		};
 		let end = Point {
 			x: (index + 1) as u32 * PIXELS_PER_DAY + SPACE_LEFT,
-			y: end.temp_max.abs_diff(all_temps_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
+			y: end.temp_max.abs_diff(temp_range_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
 		};
 		draw_line_segment(&mut canvas, start, end, colour_max);
 	}
-	let encoder = PngEncoder::new(std::io::stdout());
-	encoder
-		.write_image(&canvas, width, height, ColorType::Rgba8)
-		.expect("Failed to write image to stdout");
-	/*canvas
-	.save_with_format("./image.png", ImageFormat::Png)
-	.expect("Failed to save image");*/
+
+	const TO_FILE: bool = false;
+	if TO_FILE {
+		canvas
+			.save_with_format("./image.png", ImageFormat::Png)
+			.expect("Failed to save image");
+	} else {
+		let encoder = PngEncoder::new(std::io::stdout());
+		encoder
+			.write_image(&canvas, width, height, ColorType::Rgb8)
+			.expect("Failed to write image to stdout");
+	}
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -163,7 +218,7 @@ struct Point {
 	y: u32,
 }
 
-fn place_dot(canvas: &mut RgbaImage, point: Point, colour: Rgba<u8>) {
+fn place_dot(canvas: &mut RgbImage, point: Point, colour: Rgb<u8>) {
 	canvas.put_pixel(point.x, point.y, colour);
 	canvas.put_pixel(point.x - 1, point.y, colour);
 	canvas.put_pixel(point.x + 1, point.y, colour);
@@ -171,7 +226,7 @@ fn place_dot(canvas: &mut RgbaImage, point: Point, colour: Rgba<u8>) {
 	canvas.put_pixel(point.x, point.y + 1, colour);
 }
 
-fn draw_line_segment(canvas: &mut RgbaImage, start: Point, end: Point, colour: Rgba<u8>) {
+fn draw_line_segment(canvas: &mut RgbImage, start: Point, end: Point, colour: Rgb<u8>) {
 	for point in BresenhamLineIter::new(start, end) {
 		canvas.put_pixel(point.x, point.y, colour);
 	}
@@ -179,6 +234,7 @@ fn draw_line_segment(canvas: &mut RgbaImage, start: Point, end: Point, colour: R
 
 /// Iterates over the coordinates in a line segment using
 /// [Bresenham's line drawing algorithm](https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm).
+/// Stolen/adapted from imageproc crate
 struct BresenhamLineIter {
 	dx: u32,
 	dy: u32,
