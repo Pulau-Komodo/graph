@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use image::{codecs::png::PngEncoder, ColorType, ImageEncoder, ImageFormat, Rgb, RgbImage};
 use itertools::Itertools;
 
@@ -7,9 +9,141 @@ const SPACE_LEFT: u32 = 21;
 const SPACE_RIGHT: u32 = 9;
 const PIXELS_PER_CELSIUS: u32 = 3;
 const PIXELS_PER_DAY: u32 = 25;
+const FONT_SCALE: rusttype::Scale = rusttype::Scale { x: 14.0, y: 14.0 };
+
+mod colours {
+	use image::Rgb;
+	pub const MIN_TEMP: Rgb<u8> = Rgb::<u8>([0, 148, 255]);
+	pub const MAX_TEMP: Rgb<u8> = Rgb::<u8>([255, 0, 0]);
+	pub const MAIN_LINES: Rgb<u8> = Rgb::<u8>([127, 127, 127]);
+	pub const GRID_LINES: Rgb<u8> = Rgb::<u8>([63, 63, 63]);
+	pub const TEXT: Rgb<u8> = Rgb::<u8>([127, 127, 127]);
+}
 
 fn main() {
 	let data = day_data_from_args();
+	let temp_range = calculate_grid_range(&data);
+	let width = PIXELS_PER_DAY * (data.len() - 1) as u32 + SPACE_LEFT + SPACE_RIGHT;
+	let height = temp_range.len() as u32 * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE + SPACE_BELOW;
+	let mut canvas = RgbImage::new(width, height);
+	let font_data: &[u8] = include_bytes!("../RobotoCondensed-Regular.ttf");
+	let font = rusttype::Font::try_from_bytes(font_data).expect("Failed to read font");
+	fill_canvas(&mut canvas, Rgb::<u8>([0, 0, 0]));
+	draw_outer_lines(&mut canvas);
+	day_lines_and_labels(&mut canvas, &data, &font);
+	temp_lines_and_labels(&mut canvas, temp_range.clone(), &font);
+	draw_temp_lines(&mut canvas, &data, temp_range.end, false);
+	draw_temp_lines(&mut canvas, &data, temp_range.end, true);
+
+	const TO_FILE: bool = true;
+	if TO_FILE {
+		canvas
+			.save_with_format("./image.png", ImageFormat::Png)
+			.expect("Failed to save image");
+	} else {
+		let encoder = PngEncoder::new(std::io::stdout());
+		encoder
+			.write_image(&canvas, width, height, ColorType::Rgb8)
+			.expect("Failed to write image to stdout");
+	}
+}
+
+fn fill_canvas(canvas: &mut image::ImageBuffer<Rgb<u8>, Vec<u8>>, colour: Rgb<u8>) {
+	let width = canvas.width();
+	let height = canvas.height();
+	imageproc::drawing::draw_filled_rect_mut(
+		canvas,
+		imageproc::rect::Rect::at(0, 0).of_size(width, height),
+		colour,
+	);
+}
+
+/// Draws the temperature lines onto the canvas. If max is true it draws the maximum temperature lines, otherwise it draws the minimum temperature lines.
+fn draw_temp_lines(canvas: &mut RgbImage, data: &[DayData], temp_range_max: i32, max: bool) {
+	let colour = if max {
+		colours::MAX_TEMP
+	} else {
+		colours::MIN_TEMP
+	};
+	for (index, (start, end)) in data.iter().tuple_windows().enumerate() {
+		let start_temp = if max { start.temp_max } else { start.temp_min };
+		let end_temp = if max { end.temp_max } else { end.temp_min };
+		let start = Point {
+			x: index as u32 * PIXELS_PER_DAY + SPACE_LEFT,
+			y: start_temp.abs_diff(temp_range_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
+		};
+		let end = Point {
+			x: (index + 1) as u32 * PIXELS_PER_DAY + SPACE_LEFT,
+			y: end_temp.abs_diff(temp_range_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
+		};
+		draw_line_segment(canvas, start, end, colour);
+	}
+}
+
+fn temp_lines_and_labels(canvas: &mut RgbImage, temp_range: Range<i32>, font: &rusttype::Font) {
+	let width = canvas.width();
+	let max_temp = temp_range.end / 100;
+	for temp in temp_range.step_by(200).map(|n| n / 100) {
+		let y = SPACE_ABOVE + max_temp.abs_diff(temp) * PIXELS_PER_CELSIUS;
+		let line_colour = if temp == 0 {
+			colours::MAIN_LINES
+		} else {
+			colours::GRID_LINES
+		};
+		draw_line_segment(
+			canvas,
+			Point { x: SPACE_LEFT, y },
+			Point {
+				x: width - SPACE_RIGHT,
+				y,
+			},
+			line_colour,
+		);
+		if temp % 4 == 0 {
+			let text = &format!("{}", temp);
+			let (text_width, text_height) = imageproc::drawing::text_size(FONT_SCALE, font, text);
+			imageproc::drawing::draw_text_mut(
+				canvas,
+				colours::TEXT,
+				SPACE_LEFT as i32 - text_width - 3,
+				y as i32 - text_height / 2,
+				FONT_SCALE,
+				font,
+				text,
+			);
+		}
+	}
+}
+
+fn day_lines_and_labels(canvas: &mut RgbImage, data: &[DayData], font: &rusttype::Font) {
+	let height = canvas.height();
+	for (index, day) in data.iter().enumerate() {
+		let x = SPACE_LEFT + index as u32 * PIXELS_PER_DAY;
+		draw_line_segment(
+			canvas,
+			Point { x, y: SPACE_ABOVE },
+			Point {
+				x,
+				y: height - SPACE_BELOW,
+			},
+			colours::GRID_LINES,
+		);
+		let text = &format!("{}", day.day);
+		let (text_width, _text_height) = imageproc::drawing::text_size(FONT_SCALE, font, text);
+		imageproc::drawing::draw_text_mut(
+			canvas,
+			colours::TEXT,
+			x as i32 - text_width / 2,
+			(height - SPACE_BELOW + 5) as i32,
+			FONT_SCALE,
+			font,
+			text,
+		);
+	}
+}
+
+/// Get the lowest and highest temperatures that the grid will show. These are the closest multiples of 4 degrees Celsius that include all data.
+fn calculate_grid_range(data: &[DayData]) -> Range<i32> {
 	let (temp_range_min, temp_range_max) = {
 		let (all_temps_min, all_temps_max) = data.iter().fold(
 			(i32::MAX, i32::MIN),
@@ -27,54 +161,25 @@ fn main() {
 			all_temps_max + round_up,
 		)
 	};
-	let temp_range = temp_range_max.abs_diff(temp_range_min);
-	let width = PIXELS_PER_DAY * (data.len() - 1) as u32 + SPACE_LEFT + SPACE_RIGHT;
-	let height = temp_range * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE + SPACE_BELOW;
-	let mut canvas = RgbImage::new(width, height);
-	imageproc::drawing::draw_filled_rect_mut(
-		&mut canvas,
-		imageproc::rect::Rect::at(0, 0).of_size(width, height),
-		Rgb::<u8>([0, 0, 0]),
-	);
-	let colour_min = Rgb::<u8>([0, 148, 255]);
-	let colour_max = Rgb::<u8>([255, 0, 0]);
-	let colour_main_lines = Rgb::<u8>([127, 127, 127]);
-	let colour_grid_lines = Rgb::<u8>([63, 63, 63]);
-	let colour_text = Rgb::<u8>([127, 127, 127]);
-	let font_data: &[u8] = include_bytes!("../RobotoCondensed-Regular.ttf");
-	let font = rusttype::Font::try_from_bytes(font_data).expect("Failed to read font");
-	let font_scale = rusttype::Scale { x: 14.0, y: 14.0 };
-	/*for (
-		index,
-		DayData {
-			temp_min, temp_max, ..
-		},
-	) in data.iter().enumerate()
-	{
-		let point_temp_min = Point {
-			x: index as u32 * PIXELS_PER_DAY + SPACE_LEFT,
-			y: temp_min.abs_diff(all_temps_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
-		};
-		place_dot(&mut canvas, point_temp_min, colour_min);
-		let point_temp_max = Point {
-			x: index as u32 * PIXELS_PER_DAY + SPACE_LEFT,
-			y: temp_max.abs_diff(all_temps_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
-		};
-		place_dot(&mut canvas, point_temp_max, colour_max);
-	}*/
+	temp_range_min..temp_range_max
+}
+
+fn draw_outer_lines(canvas: &mut RgbImage) {
+	let height = canvas.height();
 	let x = SPACE_LEFT - 1;
 	draw_line_segment(
-		&mut canvas,
+		canvas,
 		Point { x, y: SPACE_ABOVE },
 		Point {
 			x,
 			y: height - SPACE_BELOW,
 		},
-		colour_main_lines,
+		colours::MAIN_LINES,
 	);
 	let y = height - SPACE_BELOW + 1;
+	let width = canvas.width();
 	draw_line_segment(
-		&mut canvas,
+		canvas,
 		Point {
 			x: SPACE_LEFT - 1,
 			y,
@@ -83,95 +188,8 @@ fn main() {
 			x: width - SPACE_RIGHT,
 			y,
 		},
-		colour_main_lines,
+		colours::MAIN_LINES,
 	);
-	for (index, day) in data.iter().enumerate() {
-		let x = SPACE_LEFT + index as u32 * PIXELS_PER_DAY;
-		draw_line_segment(
-			&mut canvas,
-			Point { x, y: SPACE_ABOVE },
-			Point {
-				x,
-				y: height - SPACE_BELOW,
-			},
-			colour_grid_lines,
-		);
-		let text = &format!("{}", day.day);
-		let (text_width, _text_height) = imageproc::drawing::text_size(font_scale, &font, text);
-		imageproc::drawing::draw_text_mut(
-			&mut canvas,
-			colour_text,
-			x as i32 - text_width / 2,
-			(height - SPACE_BELOW + 5) as i32,
-			font_scale,
-			&font,
-			text,
-		);
-	}
-	for temp in (temp_range_min / 100..=temp_range_max / 100).step_by(2) {
-		let y = SPACE_ABOVE + (temp_range_max / 100).abs_diff(temp) * PIXELS_PER_CELSIUS;
-		let line_colour = if temp == 0 {
-			colour_main_lines
-		} else {
-			colour_grid_lines
-		};
-		draw_line_segment(
-			&mut canvas,
-			Point { x: SPACE_LEFT, y },
-			Point {
-				x: width - SPACE_RIGHT,
-				y,
-			},
-			line_colour,
-		);
-		if temp % 4 == 0 {
-			let text = &format!("{}", temp);
-			let (text_width, text_height) = imageproc::drawing::text_size(font_scale, &font, text);
-			imageproc::drawing::draw_text_mut(
-				&mut canvas,
-				colour_text,
-				SPACE_LEFT as i32 - text_width - 3,
-				y as i32 - text_height / 2,
-				font_scale,
-				&font,
-				text,
-			);
-		}
-	}
-	for (index, (start, end)) in data.iter().tuple_windows().enumerate() {
-		let start = Point {
-			x: index as u32 * PIXELS_PER_DAY + SPACE_LEFT,
-			y: start.temp_min.abs_diff(temp_range_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
-		};
-		let end = Point {
-			x: (index + 1) as u32 * PIXELS_PER_DAY + SPACE_LEFT,
-			y: end.temp_min.abs_diff(temp_range_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
-		};
-		draw_line_segment(&mut canvas, start, end, colour_min);
-	}
-	for (index, (start, end)) in data.iter().tuple_windows().enumerate() {
-		let start = Point {
-			x: index as u32 * PIXELS_PER_DAY + SPACE_LEFT,
-			y: start.temp_max.abs_diff(temp_range_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
-		};
-		let end = Point {
-			x: (index + 1) as u32 * PIXELS_PER_DAY + SPACE_LEFT,
-			y: end.temp_max.abs_diff(temp_range_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
-		};
-		draw_line_segment(&mut canvas, start, end, colour_max);
-	}
-
-	const TO_FILE: bool = false;
-	if TO_FILE {
-		canvas
-			.save_with_format("./image.png", ImageFormat::Png)
-			.expect("Failed to save image");
-	} else {
-		let encoder = PngEncoder::new(std::io::stdout());
-		encoder
-			.write_image(&canvas, width, height, ColorType::Rgb8)
-			.expect("Failed to write image to stdout");
-	}
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -213,20 +231,12 @@ fn day_data_from_args() -> Vec<DayData> {
 	pairs
 }
 
-struct Point {
-	x: u32,
-	y: u32,
+struct Point<T: std::ops::Add + std::ops::Sub> {
+	x: T,
+	y: T,
 }
 
-fn place_dot(canvas: &mut RgbImage, point: Point, colour: Rgb<u8>) {
-	canvas.put_pixel(point.x, point.y, colour);
-	canvas.put_pixel(point.x - 1, point.y, colour);
-	canvas.put_pixel(point.x + 1, point.y, colour);
-	canvas.put_pixel(point.x, point.y - 1, colour);
-	canvas.put_pixel(point.x, point.y + 1, colour);
-}
-
-fn draw_line_segment(canvas: &mut RgbImage, start: Point, end: Point, colour: Rgb<u8>) {
+fn draw_line_segment(canvas: &mut RgbImage, start: Point<u32>, end: Point<u32>, colour: Rgb<u8>) {
 	for point in BresenhamLineIter::new(start, end) {
 		canvas.put_pixel(point.x, point.y, colour);
 	}
@@ -249,7 +259,7 @@ struct BresenhamLineIter {
 impl BresenhamLineIter {
 	/// Creates a [`BresenhamLineIter`](struct.BresenhamLineIter.html) which will iterate over the integer coordinates
 	/// between `start` and `end`.
-	fn new(start: Point, end: Point) -> BresenhamLineIter {
+	fn new(start: Point<u32>, end: Point<u32>) -> BresenhamLineIter {
 		let Point {
 			x: mut x0,
 			y: mut y0,
@@ -286,9 +296,9 @@ impl BresenhamLineIter {
 }
 
 impl Iterator for BresenhamLineIter {
-	type Item = Point;
+	type Item = Point<u32>;
 
-	fn next(&mut self) -> Option<Point> {
+	fn next(&mut self) -> Option<Point<u32>> {
 		if self.x > self.end_x {
 			None
 		} else {
