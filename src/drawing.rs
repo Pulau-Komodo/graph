@@ -1,6 +1,10 @@
 use image::{Rgb, RgbImage};
+use rusttype::Scale;
 
-use crate::{colours, common_types::Point};
+use crate::{
+	colours,
+	common_types::{Point, Range},
+};
 
 pub fn draw_line_segment(
 	canvas: &mut RgbImage,
@@ -147,4 +151,92 @@ pub fn fill_canvas(canvas: &mut RgbImage, colour: Rgb<u8>) {
 		imageproc::rect::Rect::at(0, 0).of_size(width, height),
 		colour,
 	);
+}
+
+pub fn horizontal_lines_and_labels(
+	canvas: &mut RgbImage,
+	data_range: Range<i32>,
+	line_interval: usize,
+	label_interval: usize,
+	font: &rusttype::Font,
+	font_scale: Scale,
+	padding: Padding,
+	spacing: u32,
+) {
+	let width = canvas.width();
+	let max_value = data_range.end() / 100;
+	for value in (data_range.start()..=data_range.end())
+		.step_by(line_interval * 100)
+		.map(|n| n / 100)
+	{
+		let y = padding.above + max_value.abs_diff(value) * spacing;
+		let line_colour = if value == 0 {
+			colours::MAIN_LINES
+		} else {
+			colours::GRID_LINES
+		};
+		draw_line_segment(
+			canvas,
+			Point { x: padding.left, y },
+			Point {
+				x: width - padding.right,
+				y,
+			},
+			line_colour,
+		);
+		if value % label_interval as i32 == 0 {
+			let text = &format!("{}", value);
+			let (text_width, text_height) = imageproc::drawing::text_size(font_scale, font, text);
+			imageproc::drawing::draw_text_mut(
+				canvas,
+				colours::TEXT,
+				padding.left as i32 - text_width - 3,
+				y as i32 - text_height / 2,
+				font_scale,
+				font,
+				text,
+			);
+		}
+	}
+}
+
+pub fn vertical_lines_and_labels(
+	canvas: &mut RgbImage,
+	data: impl Iterator<Item = u8>,
+	line_interval: usize,
+	label_interval: usize,
+	font: &rusttype::Font,
+	font_scale: Scale,
+	padding: Padding,
+	spacing: u32,
+) {
+	let height = canvas.height();
+	for (index, item) in data.enumerate().step_by(line_interval) {
+		let x = padding.left + index as u32 * spacing;
+		draw_line_segment(
+			canvas,
+			Point {
+				x,
+				y: padding.above,
+			},
+			Point {
+				x,
+				y: height - padding.below,
+			},
+			colours::GRID_LINES,
+		);
+		if index % label_interval == 0 {
+			let text = &format!("{}", item);
+			let (text_width, _text_height) = imageproc::drawing::text_size(font_scale, font, text);
+			imageproc::drawing::draw_text_mut(
+				canvas,
+				colours::TEXT,
+				x as i32 - text_width / 2,
+				(height - padding.below + 5) as i32,
+				font_scale,
+				font,
+				text,
+			);
+		}
+	}
 }

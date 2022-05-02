@@ -1,4 +1,4 @@
-use graph::modules::daily_temp;
+use graph::modules::{daily_temp, hourly_uvi};
 
 use image::{codecs::png::PngEncoder, ColorType, ImageEncoder, ImageFormat};
 
@@ -10,10 +10,11 @@ fn main() {
 	let args: Vec<_> = args.collect();
 	let canvas = match mode.as_str() {
 		"daily_temp" => daily_temp::create(font, args),
+		"hourly_uvi" => hourly_uvi::create(font, args),
 		x => panic!("Unexpected first argument {x}"),
 	};
 
-	const TO_FILE: bool = true;
+	const TO_FILE: bool = false;
 	if TO_FILE {
 		canvas
 			.save_with_format("./image.png", ImageFormat::Png)
