@@ -17,7 +17,7 @@ const PIXELS_PER_DAY: u32 = 25;
 const FONT_SCALE: rusttype::Scale = rusttype::Scale { x: 14.0, y: 14.0 };
 
 pub fn create(font: Font, args: Vec<String>) -> RgbImage {
-	let data = day_data_from_args(args);
+	let data = data_from_args(args);
 	let temp_range = calculate_grid_range(&data);
 	let width = PIXELS_PER_DAY * (data.len() - 1) as u32 + SPACE_LEFT + SPACE_RIGHT;
 	let height = temp_range.len() as u32 * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE + SPACE_BELOW;
@@ -66,16 +66,16 @@ impl DayData {
 	}
 }
 
-fn day_data_from_args(args: Vec<String>) -> Vec<DayData> {
-	let mut pairs = Vec::with_capacity(args.len() / 3);
+fn data_from_args(args: Vec<String>) -> Vec<DayData> {
+	let mut data = Vec::with_capacity(args.len() / 3);
 	for mut item in args.into_iter().chunks(3).into_iter() {
 		let (day, temp_min, temp_max) = item
 			.next_tuple()
 			.expect("Arguments could not be grouped into threes");
-		let data = DayData::from_args(day, temp_min, temp_max);
-		pairs.push(data);
+		let day_data = DayData::from_args(day, temp_min, temp_max);
+		data.push(day_data);
 	}
-	pairs
+	data
 }
 
 /// Get the lowest and highest temperatures that the grid will show. These are the closest multiples of 4 degrees Celsius that include all data.
