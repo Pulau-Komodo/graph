@@ -22,13 +22,11 @@ pub fn draw_line_segment_with_gradient(
 	canvas: &mut RgbImage,
 	start: Point<u32>,
 	end: Point<u32>,
-	gradient_range: &Range<u32>,
 	gradient: &MultiPointGradient,
 ) {
 	for point in BresenhamLineIter::new(start, end) {
-		let gradient_point = (canvas.height() - point.y - gradient_range.start()) as f32
-			/ gradient_range.len() as f32;
-		let colour = Rgb(gradient.get_colour(gradient_point.clamp(0.0, 1.0)));
+		let gradient_point = canvas.height() - point.y;
+		let colour = Rgb(gradient.get_colour(gradient_point));
 		canvas.put_pixel(point.x, point.y, colour);
 	}
 }

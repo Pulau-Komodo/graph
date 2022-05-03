@@ -8,14 +8,15 @@ fn main() {
 	let mut args = std::env::args();
 	let mode = args.nth(1).expect("No arguments used");
 	let args: Vec<_> = args.collect();
-	let canvas = match mode.as_str() {
-		"daily_temp" => daily_temp::create(font, args),
-		"hourly_uvi" => hourly_uvi::create(font, args),
+	let (canvas, to_file) = match mode.as_str() {
+		"daily_temp" => (daily_temp::create(font, args), false),
+		"hourly_uvi" => (hourly_uvi::create(font, args), false),
+		"daily_temp_f" => (daily_temp::create(font, args), true),
+		"hourly_uvi_f" => (hourly_uvi::create(font, args), true),
 		x => panic!("Unexpected first argument {x}"),
 	};
 
-	const TO_FILE: bool = false;
-	if TO_FILE {
+	if to_file {
 		canvas
 			.save_with_format("./image.png", ImageFormat::Png)
 			.expect("Failed to save image");

@@ -34,39 +34,45 @@ impl<T: std::ops::Sub<Output = T> + Ord + Copy> Range<T> {
 
 #[derive(Debug)]
 pub struct GradientPoint {
-	/// The point in the gradient, from 0 to 1, where it should be this colour
-	point: f32,
+	/// The point in the gradient where it should be this colour
+	point: u32,
 	/// The colour it should be in oklab
 	colour: Oklab,
 }
 
 impl GradientPoint {
-	pub fn from_rgb(point: f32, [r, g, b]: [u8; 3]) -> Self {
-		if !(0.0..=1.0).contains(&point) {
-			panic!("Gradient point out of range ({point} out of 0-1)");
-		}
+	pub fn from_rgb(point: u32, [r, g, b]: [u8; 3]) -> Self {
 		let colour = srgb_to_oklab(RGB::new(r, g, b));
 		Self { point, colour }
 	}
-	pub fn point(&self) -> f32 {
+	pub fn point(&self) -> u32 {
 		self.point
 	}
 }
 
-pub struct MultiPointGradient(Vec<GradientPoint>);
+pub struct MultiPointGradient {
+	points: Vec<GradientPoint>,
+}
 
 impl MultiPointGradient {
 	pub fn new(points: Vec<GradientPoint>) -> Self {
-		Self(points)
+		if points
+			.iter()
+			.tuple_windows()
+			.any(|(a, b)| a.point() >= b.point())
+		{
+			panic!("Gradient points not in increasing order");
+		}
+		Self { points }
 	}
-	pub fn get_colour(&self, point: f32) -> [u8; 3] {
+	pub fn get_colour(&self, point: u32) -> [u8; 3] {
 		let (start, end) = self
-			.0
+			.points
 			.iter()
 			.tuple_windows()
 			.find_or_last(|(_start, end)| point <= end.point())
 			.unwrap();
-		let adjusted_point = (point - start.point()) / (end.point() - start.point());
+		let adjusted_point = (point - start.point()) as f32 / (end.point() - start.point()) as f32;
 		/*println!(
 			"{point} adjusted to {adjusted_point} between {:?} and {:?}",
 			start, end
@@ -96,24 +102,24 @@ mod tests {
 	#[test]
 	fn gradient() {
 		let gradient = MultiPointGradient::new(vec![
-			GradientPoint::from_rgb(0.0, [0, 0, 0]),
-			GradientPoint::from_rgb(1.0, [255, 255, 255]),
+			GradientPoint::from_rgb(0, [0, 0, 0]),
+			GradientPoint::from_rgb(100, [255, 255, 255]),
 		]);
-		for n in 0..10 {
-			println!("{:?}", gradient.get_colour(n as f32 / 9.0))
+		for n in (0..=100).step_by(10) {
+			println!("{:?}", gradient.get_colour(n));
 		}
 	}
 
 	#[test]
 	fn multi_point_gradient() {
 		let gradient = MultiPointGradient::new(vec![
-			GradientPoint::from_rgb(0.0 / 9.0, [0, 0, 0]),
-			GradientPoint::from_rgb(3.0 / 9.0, [255, 255, 255]),
-			GradientPoint::from_rgb(6.0 / 9.0, [0, 0, 0]),
-			GradientPoint::from_rgb(9.0 / 9.0, [255, 255, 255]),
+			GradientPoint::from_rgb(0, [0, 0, 0]),
+			GradientPoint::from_rgb(100, [255, 255, 255]),
+			GradientPoint::from_rgb(200, [0, 0, 0]),
+			GradientPoint::from_rgb(300, [255, 255, 255]),
 		]);
-		for n in 0..=20 {
-			println!("{:?}", gradient.get_colour(n as f32 / 20.0))
+		for n in (0..=300).step_by(10) {
+			println!("{:?}", gradient.get_colour(n))
 		}
 	}
 }

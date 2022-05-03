@@ -98,12 +98,10 @@ fn calculate_max_grid_uvi(data: &[HourlyUviDatum]) -> u16 {
 /// Draws the UVI lines onto the canvas.
 fn draw_uvi_lines(canvas: &mut RgbImage, data: &[HourlyUviDatum], grid_max_uvi: u16) {
 	let gradient = MultiPointGradient::new(vec![
-		GradientPoint::from_rgb(0.0, [0, 255, 33]),
-		GradientPoint::from_rgb(4.5 / 9.0, [255, 255, 33]),
-		GradientPoint::from_rgb(1.0, [255, 0, 33]),
+		GradientPoint::from_rgb(SPACE_BELOW, [0, 255, 33]),
+		GradientPoint::from_rgb(SPACE_BELOW + PIXELS_PER_UVI * 9 / 2, [255, 255, 33]),
+		GradientPoint::from_rgb(SPACE_BELOW + PIXELS_PER_UVI * 9, [255, 0, 33]),
 	]);
-	// Range over pixels (From bottom) representing 0 to 9 UVI
-	let range = Range::new(SPACE_BELOW, SPACE_BELOW + 9 * PIXELS_PER_UVI);
 	for (index, (start, end)) in data.iter().tuple_windows().enumerate() {
 		let start = Point {
 			x: index as u32 * PIXELS_PER_HOUR + SPACE_LEFT,
@@ -113,6 +111,6 @@ fn draw_uvi_lines(canvas: &mut RgbImage, data: &[HourlyUviDatum], grid_max_uvi: 
 			x: (index + 1) as u32 * PIXELS_PER_HOUR + SPACE_LEFT,
 			y: end.uvi.abs_diff(grid_max_uvi) as u32 * PIXELS_PER_UVI / 100 + SPACE_ABOVE,
 		};
-		draw_line_segment_with_gradient(canvas, start, end, &range, &gradient);
+		draw_line_segment_with_gradient(canvas, start, end, &gradient);
 	}
 }
