@@ -92,7 +92,7 @@ fn calculate_max_grid_uvi(data: &[HourlyUviDatum]) -> u16 {
 		0 => 0,
 		n => 100 - n,
 	};
-	(highest_uv + round_up) as u16
+	highest_uv + round_up
 }
 
 /// Draws the UVI lines onto the canvas.
