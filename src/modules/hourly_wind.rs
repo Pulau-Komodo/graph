@@ -13,7 +13,7 @@ use crate::{
 const SPACE_ABOVE: u32 = 7;
 const SPACE_BELOW: u32 = 19 + 12 + 3;
 const SPACE_LEFT: u32 = 21;
-const SPACE_RIGHT: u32 = 9;
+const SPACE_RIGHT: u32 = 3;
 const PIXELS_PER_M_PER_S: u32 = 5;
 const PIXELS_PER_HOUR: u32 = 8;
 const DIRECTION_GRAPH_HEIGHT: u32 = 13;
