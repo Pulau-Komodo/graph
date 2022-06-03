@@ -12,8 +12,8 @@ use crate::{
 
 const SPACE_ABOVE: u32 = 7;
 const SPACE_BELOW: u32 = 19;
-const SPACE_LEFT: u32 = 12;
-const SPACE_RIGHT: u32 = 9;
+const SPACE_LEFT: u32 = 21;
+const SPACE_RIGHT: u32 = 3;
 const PIXELS_PER_UVI: u32 = 10;
 const PIXELS_PER_HOUR: u32 = 8;
 const FONT_SCALE: rusttype::Scale = rusttype::Scale { x: 14.0, y: 14.0 };
