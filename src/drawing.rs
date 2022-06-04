@@ -1,4 +1,5 @@
 use image::{Rgb, RgbImage};
+use itertools::Itertools;
 use rusttype::Scale;
 
 use crate::{
@@ -252,5 +253,32 @@ pub fn vertical_lines_and_labels(
 				text,
 			);
 		}
+	}
+}
+
+pub struct Spacing {
+	pub horizontal: u32,
+	pub vertical: u32,
+}
+
+/// Draws the line graph lines onto the canvas.
+pub fn draw_graph_lines(
+	canvas: &mut RgbImage,
+	data: impl IntoIterator<Item = i32>,
+	colour: Rgb<u8>,
+	max: i32,
+	padding: Padding,
+	spacing: Spacing,
+) {
+	for (index, (start, end)) in data.into_iter().tuple_windows().enumerate() {
+		let start = Point {
+			x: index as u32 * spacing.horizontal + padding.left,
+			y: start.abs_diff(max) * spacing.vertical / 100 + padding.above,
+		};
+		let end = Point {
+			x: (index + 1) as u32 * spacing.horizontal + padding.left,
+			y: end.abs_diff(max) * spacing.vertical / 100 + padding.above,
+		};
+		draw_line_segment(canvas, start, end, colour);
 	}
 }
