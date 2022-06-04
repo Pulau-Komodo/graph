@@ -187,6 +187,8 @@ pub fn horizontal_lines_and_labels(
 		let y = padding.above + max_value.abs_diff(value) * spacing;
 		let line_colour = if value == 0 {
 			colours::MAIN_LINES
+		} else if value / 100 % label_interval as i32 == 0 {
+			colours::BRIGHTER_GRID_LINES
 		} else {
 			colours::GRID_LINES
 		};
@@ -228,6 +230,11 @@ pub fn vertical_lines_and_labels(
 	let height = canvas.height();
 	for (index, item) in data.enumerate().step_by(line_interval) {
 		let x = padding.left + index as u32 * spacing;
+		let line_colour = if index % label_interval == 0 {
+			colours::BRIGHTER_GRID_LINES
+		} else {
+			colours::GRID_LINES
+		};
 		draw_line_segment(
 			canvas,
 			Point {
@@ -238,7 +245,7 @@ pub fn vertical_lines_and_labels(
 				x,
 				y: height - padding.below,
 			},
-			colours::GRID_LINES,
+			line_colour,
 		);
 		if index % label_interval == 0 {
 			let text = &format!("{}", item);
