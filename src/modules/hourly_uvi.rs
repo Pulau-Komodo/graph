@@ -3,56 +3,64 @@ use itertools::Itertools;
 use rusttype::Font;
 
 use crate::{
-	common_types::{GradientPoint, MultiPointGradient, Point, Range},
+	common_types::{GradientPoint, MultiPointGradient, Range},
 	drawing::{
-		draw_line_segment_with_gradient, draw_outer_lines, fill_canvas,
-		horizontal_lines_and_labels, vertical_lines_and_labels, Padding,
+		draw_graph_lines_with_gradient, draw_outer_lines, fill_canvas, horizontal_lines_and_labels,
+		vertical_lines_and_labels, MarkIntervals, Padding, Spacing,
 	},
 };
 
-const SPACE_ABOVE: u32 = 7;
-const SPACE_BELOW: u32 = 19;
-const SPACE_LEFT: u32 = 21;
-const SPACE_RIGHT: u32 = 3;
-const PIXELS_PER_UVI: u32 = 10;
-const PIXELS_PER_HOUR: u32 = 8;
+const PADDING: Padding = Padding {
+	above: 7,
+	below: 19,
+	left: 21,
+	right: 3,
+};
+const SPACING: Spacing = Spacing {
+	horizontal: 8,
+	vertical: 10,
+};
 const FONT_SCALE: rusttype::Scale = rusttype::Scale { x: 14.0, y: 14.0 };
 
 pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 	let data = data_from_args(args);
 	let max_grid_uvi = calculate_max_grid_uvi(&data);
-	let width = (data.len() - 1) as u32 * PIXELS_PER_HOUR + SPACE_LEFT + SPACE_RIGHT;
-	let height = max_grid_uvi as u32 * PIXELS_PER_UVI / 100 + SPACE_ABOVE + SPACE_BELOW;
-	const PADDING: Padding = Padding {
-		above: SPACE_ABOVE,
-		below: SPACE_BELOW,
-		left: SPACE_LEFT,
-		right: SPACE_RIGHT,
-	};
+	let width = (data.len() - 1) as u32 * SPACING.horizontal + PADDING.horizontal();
+	let height = max_grid_uvi as u32 * SPACING.vertical / 100 + PADDING.vertical();
 	let mut canvas = RgbImage::new(width, height);
 	fill_canvas(&mut canvas, Rgb::<u8>([0, 0, 0]));
 	draw_outer_lines(&mut canvas, PADDING);
 	vertical_lines_and_labels(
 		&mut canvas,
 		data.iter().map(|datum| datum.hour),
-		1,
-		2,
+		MarkIntervals::new(1, 2),
 		&font,
 		FONT_SCALE,
 		PADDING,
-		PIXELS_PER_HOUR,
+		SPACING.horizontal,
 	);
 	horizontal_lines_and_labels(
 		&mut canvas,
 		Range::new(0, max_grid_uvi as i32),
-		1,
-		1,
+		MarkIntervals::new(1, 1),
 		&font,
 		FONT_SCALE,
 		PADDING,
-		PIXELS_PER_UVI,
+		SPACING.vertical,
 	);
-	draw_uvi_lines(&mut canvas, &data, max_grid_uvi);
+	let gradient = MultiPointGradient::new(vec![
+		GradientPoint::from_rgb(PADDING.below, [0, 255, 33]),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 9 / 2, [255, 255, 33]),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 9, [255, 0, 33]),
+	]);
+	draw_graph_lines_with_gradient(
+		&mut canvas,
+		data.iter().map(|day| day.uvi as i32),
+		gradient,
+		max_grid_uvi as i32,
+		PADDING,
+		SPACING,
+	);
 	canvas
 }
 
@@ -93,24 +101,4 @@ fn calculate_max_grid_uvi(data: &[HourlyUviDatum]) -> u16 {
 		n => 100 - n,
 	};
 	highest_uv + round_up
-}
-
-/// Draws the UVI lines onto the canvas.
-fn draw_uvi_lines(canvas: &mut RgbImage, data: &[HourlyUviDatum], grid_max_uvi: u16) {
-	let gradient = MultiPointGradient::new(vec![
-		GradientPoint::from_rgb(SPACE_BELOW, [0, 255, 33]),
-		GradientPoint::from_rgb(SPACE_BELOW + PIXELS_PER_UVI * 9 / 2, [255, 255, 33]),
-		GradientPoint::from_rgb(SPACE_BELOW + PIXELS_PER_UVI * 9, [255, 0, 33]),
-	]);
-	for (index, (start, end)) in data.iter().tuple_windows().enumerate() {
-		let start = Point {
-			x: index as u32 * PIXELS_PER_HOUR + SPACE_LEFT,
-			y: start.uvi.abs_diff(grid_max_uvi) as u32 * PIXELS_PER_UVI / 100 + SPACE_ABOVE,
-		};
-		let end = Point {
-			x: (index + 1) as u32 * PIXELS_PER_HOUR + SPACE_LEFT,
-			y: end.uvi.abs_diff(grid_max_uvi) as u32 * PIXELS_PER_UVI / 100 + SPACE_ABOVE,
-		};
-		draw_line_segment_with_gradient(canvas, start, end, &gradient);
-	}
 }

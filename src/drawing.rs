@@ -127,6 +127,43 @@ pub struct Padding {
 	pub right: u32,
 }
 
+impl Padding {
+	/** This is just left + right. */
+	pub const fn horizontal(&self) -> u32 {
+		self.left + self.right
+	}
+	/** This is just above + below. */
+	pub const fn vertical(&self) -> u32 {
+		self.above + self.below
+	}
+}
+
+pub struct Spacing {
+	pub horizontal: u32,
+	pub vertical: u32,
+}
+
+pub struct MarkIntervals {
+	line: usize,
+	label: usize,
+}
+
+impl MarkIntervals {
+	/** Panics if label is not a multiple of line */
+	pub const fn new(line: usize, label: usize) -> Self {
+		if label % line != 0 {
+			panic!("Labelling interval needs to be a multiple of line drawing interval.");
+		}
+		Self { line, label }
+	}
+	pub const fn line(&self) -> usize {
+		self.line
+	}
+	pub const fn label(&self) -> usize {
+		self.label
+	}
+}
+
 pub fn draw_outer_lines(canvas: &mut RgbImage, padding: Padding) {
 	let height = canvas.height();
 	let x = padding.left - 1;
@@ -171,8 +208,7 @@ pub fn fill_canvas(canvas: &mut RgbImage, colour: Rgb<u8>) {
 pub fn horizontal_lines_and_labels(
 	canvas: &mut RgbImage,
 	data_range: Range<i32>,
-	line_interval: usize,
-	label_interval: usize,
+	intervals: MarkIntervals,
 	font: &rusttype::Font,
 	font_scale: Scale,
 	padding: Padding,
@@ -181,13 +217,13 @@ pub fn horizontal_lines_and_labels(
 	let width = canvas.width();
 	let max_value = data_range.end() / 100;
 	for value in (data_range.start()..=data_range.end())
-		.step_by(line_interval * 100)
+		.step_by(intervals.line() * 100)
 		.map(|n| n / 100)
 	{
 		let y = padding.above + max_value.abs_diff(value) * spacing;
 		let line_colour = if value == 0 {
 			colours::MAIN_LINES
-		} else if value / 100 % label_interval as i32 == 0 {
+		} else if value / 100 % intervals.label() as i32 == 0 {
 			colours::BRIGHTER_GRID_LINES
 		} else {
 			colours::GRID_LINES
@@ -201,7 +237,7 @@ pub fn horizontal_lines_and_labels(
 			},
 			line_colour,
 		);
-		if value % label_interval as i32 == 0 {
+		if value % intervals.label() as i32 == 0 {
 			let text = &format!("{}", value);
 			let (text_width, text_height) = imageproc::drawing::text_size(font_scale, font, text);
 			imageproc::drawing::draw_text_mut(
@@ -220,17 +256,16 @@ pub fn horizontal_lines_and_labels(
 pub fn vertical_lines_and_labels(
 	canvas: &mut RgbImage,
 	data: impl Iterator<Item = u8>,
-	line_interval: usize,
-	label_interval: usize,
+	intervals: MarkIntervals,
 	font: &rusttype::Font,
 	font_scale: Scale,
 	padding: Padding,
 	spacing: u32,
 ) {
 	let height = canvas.height();
-	for (index, item) in data.enumerate().step_by(line_interval) {
+	for (index, item) in data.enumerate().step_by(intervals.line()) {
 		let x = padding.left + index as u32 * spacing;
-		let line_colour = if index % label_interval == 0 {
+		let line_colour = if index % intervals.label() == 0 {
 			colours::BRIGHTER_GRID_LINES
 		} else {
 			colours::GRID_LINES
@@ -247,7 +282,7 @@ pub fn vertical_lines_and_labels(
 			},
 			line_colour,
 		);
-		if index % label_interval == 0 {
+		if index % intervals.label() == 0 {
 			let text = &format!("{}", item);
 			let (text_width, _text_height) = imageproc::drawing::text_size(font_scale, font, text);
 			imageproc::drawing::draw_text_mut(
@@ -261,11 +296,6 @@ pub fn vertical_lines_and_labels(
 			);
 		}
 	}
-}
-
-pub struct Spacing {
-	pub horizontal: u32,
-	pub vertical: u32,
 }
 
 /// Draws the line graph lines onto the canvas.
@@ -287,5 +317,27 @@ pub fn draw_graph_lines(
 			y: end.abs_diff(max) * spacing.vertical / 100 + padding.above,
 		};
 		draw_line_segment(canvas, start, end, colour);
+	}
+}
+
+/// Draws the line graph lines onto the canvas with a height-based gradient.
+pub fn draw_graph_lines_with_gradient(
+	canvas: &mut RgbImage,
+	data: impl IntoIterator<Item = i32>,
+	gradient: MultiPointGradient,
+	max: i32,
+	padding: Padding,
+	spacing: Spacing,
+) {
+	for (index, (start, end)) in data.into_iter().tuple_windows().enumerate() {
+		let start = Point {
+			x: index as u32 * spacing.horizontal + padding.left,
+			y: start.abs_diff(max) as u32 * spacing.vertical / 100 + padding.above,
+		};
+		let end = Point {
+			x: (index + 1) as u32 * spacing.horizontal + padding.left,
+			y: end.abs_diff(max) as u32 * spacing.vertical / 100 + padding.above,
+		};
+		draw_line_segment_with_gradient(canvas, start, end, &gradient);
 	}
 }

@@ -1,74 +1,76 @@
 use image::{Rgb, RgbImage};
-use itertools::Itertools;
 use rusttype::Font;
 
 use crate::{
-	common_types::{Point, Range},
+	common_types::Range,
 	drawing::{
-		draw_line_segment, draw_outer_lines, fill_canvas, horizontal_lines_and_labels,
-		vertical_lines_and_labels, Padding,
+		draw_graph_lines, draw_outer_lines, fill_canvas, horizontal_lines_and_labels,
+		vertical_lines_and_labels, MarkIntervals, Padding, Spacing,
 	},
+	from_args::{data_from_args, FromArgs},
 };
 
-const SPACE_ABOVE: u32 = 7;
-const SPACE_BELOW: u32 = 19;
-const SPACE_LEFT: u32 = 21;
-const SPACE_RIGHT: u32 = 3;
-const PIXELS_PER_CELSIUS: u32 = 3;
-const PIXELS_PER_HOUR: u32 = 8;
+const PADDING: Padding = Padding {
+	above: 7,
+	below: 19,
+	left: 21,
+	right: 3,
+};
+const SPACING: Spacing = Spacing {
+	horizontal: 8,
+	vertical: 3,
+};
 const FONT_SCALE: rusttype::Scale = rusttype::Scale { x: 14.0, y: 14.0 };
 
 pub fn create(font: Font, args: Vec<String>) -> RgbImage {
-	const PADDING: Padding = Padding {
-		above: SPACE_ABOVE,
-		below: SPACE_BELOW,
-		left: SPACE_LEFT,
-		right: SPACE_RIGHT,
-	};
-	let data = data_from_args(args);
+	let data: Vec<HourlyTempData> = data_from_args(args);
 	let temp_range = calculate_grid_range(&data);
-	let width = PIXELS_PER_HOUR * (data.len() - 1) as u32 + SPACE_LEFT + SPACE_RIGHT;
-	let height = temp_range.len() as u32 * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE + SPACE_BELOW;
+	let width = SPACING.horizontal * (data.len() - 1) as u32 + PADDING.horizontal();
+	let height = temp_range.len() as u32 * SPACING.vertical / 100 + PADDING.vertical();
 	let mut canvas = RgbImage::new(width, height);
 	fill_canvas(&mut canvas, Rgb::<u8>([0, 0, 0]));
 	draw_outer_lines(&mut canvas, PADDING);
 	vertical_lines_and_labels(
 		&mut canvas,
 		data.iter().map(|hour| hour.hour),
-		1,
-		2,
+		MarkIntervals::new(1, 2),
 		&font,
 		FONT_SCALE,
 		PADDING,
-		PIXELS_PER_HOUR,
+		SPACING.horizontal,
 	);
 	horizontal_lines_and_labels(
 		&mut canvas,
 		temp_range,
-		2,
-		4,
+		MarkIntervals::new(2, 4),
 		&font,
 		FONT_SCALE,
 		PADDING,
-		PIXELS_PER_CELSIUS,
+		SPACING.vertical,
 	);
-	draw_temp_lines(
+	draw_graph_lines(
 		&mut canvas,
 		data.iter().map(|hour| hour.feels_like),
 		Rgb([0, 255, 33]),
 		temp_range.end(),
+		PADDING,
+		SPACING,
 	);
-	draw_temp_lines(
+	draw_graph_lines(
 		&mut canvas,
 		data.iter().map(|hour| hour.wet_bulb),
 		Rgb([0, 148, 255]),
 		temp_range.end(),
+		PADDING,
+		SPACING,
 	);
-	draw_temp_lines(
+	draw_graph_lines(
 		&mut canvas,
 		data.iter().map(|hour| hour.temp),
 		Rgb([255, 0, 0]),
 		temp_range.end(),
+		PADDING,
+		SPACING,
 	);
 	/*for (index, wet_bulb) in data
 		.iter()
@@ -76,7 +78,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		.filter(|(_index, hour)| hour.wet_bulb_is_accurate)
 		.map(|(index, hour)| (index, hour.wet_bulb))
 	{
-		
+
 	}*/
 	canvas
 }
@@ -92,11 +94,11 @@ struct HourlyTempData {
 	/// Wet-bulb temperature in centidegrees Celsius
 	wet_bulb: i32,
 	/// Whether the wet-bulb temperature is accurate (if not, the input was outside the range the calculation was valid for)
-	wet_bulb_is_accurate: bool,
+	_wet_bulb_is_accurate: bool,
 }
 
-impl HourlyTempData {
-	fn from_args(hour: String, temp: String, feels_like: String, humidity: String) -> Self {
+impl FromArgs<4> for HourlyTempData {
+	fn from_args([hour, temp, feels_like, humidity]: [String; 4]) -> Self {
 		let hour = hour.parse().expect("Could not parse an hour argument");
 		let temp = temp
 			.parse()
@@ -118,22 +120,9 @@ impl HourlyTempData {
 			temp,
 			feels_like,
 			wet_bulb,
-			wet_bulb_is_accurate,
+			_wet_bulb_is_accurate: wet_bulb_is_accurate,
 		}
 	}
-}
-
-fn data_from_args(args: Vec<String>) -> Vec<HourlyTempData> {
-	const CHUNK_SIZE: usize = 4;
-	let mut data = Vec::with_capacity(args.len() / CHUNK_SIZE);
-	for mut item in args.into_iter().chunks(CHUNK_SIZE).into_iter() {
-		let (hour, temp, feels_like, humidity) = item
-			.next_tuple()
-			.unwrap_or_else(|| panic!("Arguments could not be grouped into {CHUNK_SIZE}s"));
-		let uvi_datum = HourlyTempData::from_args(hour, temp, feels_like, humidity);
-		data.push(uvi_datum);
-	}
-	data
 }
 
 /// Calculates wet bulb temperature in °C given dry bulb temperature in °C and relative humidity * 100 (0-100).
@@ -169,26 +158,6 @@ fn calculate_grid_range(data: &[HourlyTempData]) -> Range<i32> {
 		all_temps_min - all_temps_min.rem_euclid(400),
 		all_temps_max + round_up,
 	)
-}
-
-/// Draws the temperature lines onto the canvas. If max is true it draws the maximum temperature lines, otherwise it draws the minimum temperature lines.
-fn draw_temp_lines(
-	canvas: &mut RgbImage,
-	data: impl IntoIterator<Item = i32>,
-	colour: Rgb<u8>,
-	temp_range_max: i32,
-) {
-	for (index, (start, end)) in data.into_iter().tuple_windows().enumerate() {
-		let start = Point {
-			x: index as u32 * PIXELS_PER_HOUR + SPACE_LEFT,
-			y: start.abs_diff(temp_range_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
-		};
-		let end = Point {
-			x: (index + 1) as u32 * PIXELS_PER_HOUR + SPACE_LEFT,
-			y: end.abs_diff(temp_range_max) * PIXELS_PER_CELSIUS / 100 + SPACE_ABOVE,
-		};
-		draw_line_segment(canvas, start, end, colour);
-	}
 }
 
 #[cfg(test)]

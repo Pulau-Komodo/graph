@@ -5,58 +5,80 @@ use rusttype::Font;
 use crate::{
 	common_types::{GradientPoint, MultiPointGradient, Point, Range},
 	drawing::{
-		draw_line_segment, draw_line_segment_with_gradient, draw_outer_lines, fill_canvas,
-		horizontal_lines_and_labels, vertical_lines_and_labels, Padding,
+		draw_graph_lines_with_gradient, draw_line_segment, draw_outer_lines, fill_canvas,
+		horizontal_lines_and_labels, vertical_lines_and_labels, MarkIntervals, Padding, Spacing,
 	},
 };
 
-const SPACE_ABOVE: u32 = 7;
-const SPACE_BELOW: u32 = 19 + 12 + 3;
-const SPACE_LEFT: u32 = 21;
-const SPACE_RIGHT: u32 = 3;
-const PIXELS_PER_M_PER_S: u32 = 5;
-const PIXELS_PER_HOUR: u32 = 8;
+const PADDING: Padding = Padding {
+	above: 7,
+	below: 19 + 12 + 3,
+	left: 21,
+	right: 3,
+};
+const SPACING: Spacing = Spacing {
+	horizontal: 8,
+	vertical: 5,
+};
 const DIRECTION_GRAPH_HEIGHT: u32 = 13;
 const FONT_SCALE: rusttype::Scale = rusttype::Scale { x: 14.0, y: 14.0 };
 
 pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 	let data = data_from_args(args);
 	let max_grid_speed = calculate_max_grid_wind_speed(&data);
-	let width = (data.len() - 1) as u32 * PIXELS_PER_HOUR + SPACE_LEFT + SPACE_RIGHT;
-	let height = max_grid_speed as u32 * PIXELS_PER_M_PER_S / 100 + SPACE_ABOVE + SPACE_BELOW;
-	const PADDING: Padding = Padding {
-		above: SPACE_ABOVE,
-		below: SPACE_BELOW,
-		left: SPACE_LEFT,
-		right: SPACE_RIGHT,
-	};
+	let width = (data.len() - 1) as u32 * SPACING.horizontal + PADDING.horizontal();
+	let height = max_grid_speed as u32 * SPACING.vertical / 100 + PADDING.vertical();
 	let mut canvas = RgbImage::new(width, height);
 	fill_canvas(&mut canvas, Rgb::<u8>([0, 0, 0]));
 	draw_outer_lines(&mut canvas, PADDING);
 	vertical_lines_and_labels(
 		&mut canvas,
 		data.iter().map(|data| data.hour),
-		1,
-		2,
+		MarkIntervals::new(1, 2),
 		&font,
 		FONT_SCALE,
 		PADDING,
-		PIXELS_PER_HOUR,
+		SPACING.horizontal,
 	);
 	horizontal_lines_and_labels(
 		&mut canvas,
 		Range::new(0, max_grid_speed as i32),
-		5,
-		5,
+		MarkIntervals::new(5, 5),
 		&font,
 		FONT_SCALE,
 		PADDING,
-		PIXELS_PER_M_PER_S,
+		SPACING.vertical,
 	);
-	draw_wind_speed_lines(&mut canvas, &data, max_grid_speed, true);
-	draw_wind_speed_lines(&mut canvas, &data, max_grid_speed, false);
-	let x = SPACE_LEFT;
-	let x2 = width - SPACE_RIGHT - 1;
+	let gradient = MultiPointGradient::new(vec![
+		GradientPoint::from_rgb(PADDING.below, [0, 255, 33]),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 7, [255, 255, 33]),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 14, [255, 0, 33]),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 21, [188, 66, 255]),
+	]);
+	draw_graph_lines_with_gradient(
+		&mut canvas,
+		data.iter().map(|hour| hour.wind_gust as i32),
+		gradient,
+		max_grid_speed as i32,
+		PADDING,
+		SPACING,
+	);
+	let gradient = MultiPointGradient::new(vec![
+		GradientPoint::from_rgb(PADDING.below, [70, 119, 67]),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 7, [118, 118, 62]),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 14, [122, 67, 62]),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 21, [103, 78, 122]),
+	]);
+	draw_graph_lines_with_gradient(
+		&mut canvas,
+		data.iter().map(|hour| hour.wind_speed as i32),
+		gradient,
+		max_grid_speed as i32,
+		PADDING,
+		SPACING,
+	);
+	let x = PADDING.left;
+	let x2 = width - PADDING.right - 1;
 	let y = height - DIRECTION_GRAPH_HEIGHT / 2 - 3;
 	for n in (0..3).step_by(2) {
 		let y = y - 1 + n;
@@ -135,48 +157,6 @@ fn calculate_max_grid_wind_speed(data: &[HourlyWindData]) -> u16 {
 		n => 500 - n,
 	};
 	highest_speed + round_up
-}
-
-/// Draws the wind speed lines onto the canvas.
-fn draw_wind_speed_lines(
-	canvas: &mut RgbImage,
-	data: &[HourlyWindData],
-	grid_max_wind_speed: u16,
-	gust: bool,
-) {
-	let gradient = if gust {
-		MultiPointGradient::new(vec![
-			GradientPoint::from_rgb(SPACE_BELOW, [70, 119, 67]),
-			GradientPoint::from_rgb(SPACE_BELOW + PIXELS_PER_M_PER_S * 7, [118, 118, 62]),
-			GradientPoint::from_rgb(SPACE_BELOW + PIXELS_PER_M_PER_S * 14, [122, 67, 62]),
-			GradientPoint::from_rgb(SPACE_BELOW + PIXELS_PER_M_PER_S * 21, [103, 78, 122]),
-		])
-	} else {
-		MultiPointGradient::new(vec![
-			GradientPoint::from_rgb(SPACE_BELOW, [0, 255, 33]),
-			GradientPoint::from_rgb(SPACE_BELOW + PIXELS_PER_M_PER_S * 7, [255, 255, 33]),
-			GradientPoint::from_rgb(SPACE_BELOW + PIXELS_PER_M_PER_S * 14, [255, 0, 33]),
-			GradientPoint::from_rgb(SPACE_BELOW + PIXELS_PER_M_PER_S * 21, [188, 66, 255]),
-		])
-	};
-	for (index, (start, end)) in data.iter().tuple_windows().enumerate() {
-		let (start_speed, end_speed) = if gust {
-			(start.wind_gust, end.wind_gust)
-		} else {
-			(start.wind_speed, end.wind_speed)
-		};
-		let start = Point {
-			x: index as u32 * PIXELS_PER_HOUR + SPACE_LEFT,
-			y: start_speed.abs_diff(grid_max_wind_speed) as u32 * PIXELS_PER_M_PER_S / 100
-				+ SPACE_ABOVE,
-		};
-		let end = Point {
-			x: (index + 1) as u32 * PIXELS_PER_HOUR + SPACE_LEFT,
-			y: end_speed.abs_diff(grid_max_wind_speed) as u32 * PIXELS_PER_M_PER_S / 100
-				+ SPACE_ABOVE,
-		};
-		draw_line_segment_with_gradient(canvas, start, end, &gradient);
-	}
 }
 
 struct AngleInterpolation {
@@ -291,12 +271,12 @@ fn draw_wind_directions(canvas: &mut RgbImage, directions: impl IntoIterator<Ite
 	let height = canvas.height();
 	for (hour_count, (start, end)) in directions.into_iter().tuple_windows().enumerate() {
 		for (x, direction) in
-			AngleInterpolation::new(start, end, PIXELS_PER_HOUR as u16).enumerate()
+			AngleInterpolation::new(start, end, SPACING.horizontal as u16).enumerate()
 		{
 			for (y, colour) in WindDirectionPixelColumn::new(direction).enumerate() {
 				if let Some(colour) = colour {
 					canvas.put_pixel(
-						hour_count as u32 * PIXELS_PER_HOUR + SPACE_LEFT + x as u32,
+						hour_count as u32 * SPACING.horizontal + PADDING.left + x as u32,
 						height - 16 + y as u32,
 						Rgb(colour),
 					);
