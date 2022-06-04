@@ -1,4 +1,4 @@
-use graph::modules::{daily_temp, hourly_temp, hourly_uvi, hourly_wind, hourly_pop};
+use graph::modules::{daily_temp, hourly_pop, hourly_temp, hourly_uvi, hourly_wind};
 
 use image::{codecs::png::PngEncoder, ColorType, ImageEncoder, ImageFormat};
 
@@ -12,7 +12,7 @@ fn main() {
 		"daily_temp" => (daily_temp::create(font, args), false),
 		"daily_temp_f" => (daily_temp::create(font, args), true),
 		"hourly_pop" => (hourly_pop::create(font, args), false),
-		"hourly_pop_p" => (hourly_pop::create(font, args), true),
+		"hourly_pop_f" => (hourly_pop::create(font, args), true),
 		"hourly_temp" => (hourly_temp::create(font, args), false),
 		"hourly_temp_f" => (hourly_temp::create(font, args), true),
 		"hourly_uvi" => (hourly_uvi::create(font, args), false),
