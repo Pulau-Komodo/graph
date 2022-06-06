@@ -1,4 +1,6 @@
-use graph::modules::{daily_temp, hourly_pop, hourly_temp, hourly_uvi, hourly_wind};
+use graph::modules::{
+	daily_temp, hourly_pop, hourly_precipitation, hourly_temp, hourly_uvi, hourly_wind,
+};
 
 use image::{codecs::png::PngEncoder, ColorType, ImageEncoder, ImageFormat};
 
@@ -6,19 +8,19 @@ fn main() {
 	let font_data: &[u8] = include_bytes!("../RobotoCondensed-Regular.ttf");
 	let font = rusttype::Font::try_from_bytes(font_data).expect("Failed to read font");
 	let mut args = std::env::args();
-	let mode = args.nth(1).expect("No arguments used");
+	let mut mode = args.nth(1).expect("No arguments used");
+	let to_file = mode.as_str() == "file";
+	if to_file {
+		mode = args.next().expect("No arguments beyond \"file\"");
+	}
 	let args: Vec<_> = args.collect();
-	let (canvas, to_file) = match mode.as_str() {
-		"daily_temp" => (daily_temp::create(font, args), false),
-		"daily_temp_f" => (daily_temp::create(font, args), true),
-		"hourly_pop" => (hourly_pop::create(font, args), false),
-		"hourly_pop_f" => (hourly_pop::create(font, args), true),
-		"hourly_temp" => (hourly_temp::create(font, args), false),
-		"hourly_temp_f" => (hourly_temp::create(font, args), true),
-		"hourly_uvi" => (hourly_uvi::create(font, args), false),
-		"hourly_uvi_f" => (hourly_uvi::create(font, args), true),
-		"hourly_wind" => (hourly_wind::create(font, args), false),
-		"hourly_wind_f" => (hourly_wind::create(font, args), true),
+	let canvas = match mode.as_str() {
+		"daily_temp" => daily_temp::create(font, args),
+		"hourly_pop" => hourly_pop::create(font, args),
+		"hourly_precipitation" => hourly_precipitation::create(font, args),
+		"hourly_temp" => hourly_temp::create(font, args),
+		"hourly_uvi" => hourly_uvi::create(font, args),
+		"hourly_wind" => hourly_wind::create(font, args),
 		x => panic!("Unexpected first argument {x}"),
 	};
 
