@@ -17,8 +17,8 @@ const PADDING: Padding = Padding {
 	right: 9,
 };
 const SPACING: Spacing = Spacing {
-	horizontal: 3,
-	vertical: 25,
+	horizontal: 25,
+	vertical: 3,
 };
 const FONT_SCALE: rusttype::Scale = rusttype::Scale { x: 14.0, y: 14.0 };
 
