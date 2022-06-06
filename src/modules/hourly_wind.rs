@@ -3,11 +3,13 @@ use itertools::Itertools;
 use rusttype::Font;
 
 use crate::{
+	colours,
 	common_types::{GradientPoint, MultiPointGradient, Point, Range},
 	drawing::{
 		draw_graph_lines_with_gradient, draw_line_segment, draw_outer_lines, fill_canvas,
 		horizontal_lines_and_labels, vertical_lines_and_labels, MarkIntervals, Padding, Spacing,
 	},
+	util::next_multiple,
 };
 
 const PADDING: Padding = Padding {
@@ -25,11 +27,17 @@ const FONT_SCALE: rusttype::Scale = rusttype::Scale { x: 14.0, y: 14.0 };
 
 pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 	let data = data_from_args(args);
-	let max_grid_speed = calculate_max_grid_wind_speed(&data);
+	let max_chart_speed = next_multiple(
+		data.iter()
+			.flat_map(|hour| [hour.wind_speed, hour.wind_gust])
+			.max()
+			.unwrap_or(0) as i32,
+		5,
+	);
 	let width = (data.len() - 1) as u32 * SPACING.horizontal + PADDING.horizontal();
-	let height = max_grid_speed as u32 * SPACING.vertical / 100 + PADDING.vertical();
+	let height = max_chart_speed as u32 * SPACING.vertical / 100 + PADDING.vertical();
 	let mut canvas = RgbImage::new(width, height);
-	fill_canvas(&mut canvas, Rgb::<u8>([0, 0, 0]));
+	fill_canvas(&mut canvas, colours::BACKGROUND);
 	draw_outer_lines(&mut canvas, PADDING);
 	vertical_lines_and_labels(
 		&mut canvas,
@@ -42,7 +50,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 	);
 	horizontal_lines_and_labels(
 		&mut canvas,
-		Range::new(0, max_grid_speed as i32),
+		Range::new(0, max_chart_speed as i32),
 		MarkIntervals::new(5, 5),
 		&font,
 		FONT_SCALE,
@@ -59,7 +67,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		&mut canvas,
 		data.iter().map(|hour| hour.wind_gust as i32),
 		gradient,
-		max_grid_speed as i32,
+		max_chart_speed as i32,
 		PADDING,
 		SPACING,
 	);
@@ -73,7 +81,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		&mut canvas,
 		data.iter().map(|hour| hour.wind_speed as i32),
 		gradient,
-		max_grid_speed as i32,
+		max_chart_speed as i32,
 		PADDING,
 		SPACING,
 	);
@@ -93,7 +101,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 	canvas
 }
 
-struct HourlyWindData {
+struct HourlyWind {
 	/// Hour of the day
 	hour: u8,
 	/// Wind speed in cm/s
@@ -104,7 +112,7 @@ struct HourlyWindData {
 	wind_direction: u16,
 }
 
-impl HourlyWindData {
+impl HourlyWind {
 	fn from_args(
 		hour: String,
 		wind_speed: String,
@@ -130,14 +138,14 @@ impl HourlyWindData {
 	}
 }
 
-fn data_from_args(args: Vec<String>) -> Vec<HourlyWindData> {
+fn data_from_args(args: Vec<String>) -> Vec<HourlyWind> {
 	const CHUNK_SIZE: usize = 4;
 	let mut data = Vec::with_capacity(args.len() / CHUNK_SIZE);
 	for mut item in args.into_iter().chunks(CHUNK_SIZE).into_iter() {
 		let (hour, wind_speed, wind_gust, wind_direction) = item
 			.next_tuple()
 			.unwrap_or_else(|| panic!("Arguments could not be grouped into {CHUNK_SIZE}s"));
-		data.push(HourlyWindData::from_args(
+		data.push(HourlyWind::from_args(
 			hour,
 			wind_speed,
 			wind_gust,
@@ -145,18 +153,6 @@ fn data_from_args(args: Vec<String>) -> Vec<HourlyWindData> {
 		));
 	}
 	data
-}
-
-/// The highest cm/s the grid will display.
-fn calculate_max_grid_wind_speed(data: &[HourlyWindData]) -> u16 {
-	let highest_speed = data.iter().fold(u16::MIN, |acc, item| {
-		acc.max(item.wind_gust).max(item.wind_speed)
-	});
-	let round_up = match highest_speed.rem_euclid(500) {
-		0 => 0,
-		n => 500 - n,
-	};
-	highest_speed + round_up
 }
 
 struct AngleInterpolation {

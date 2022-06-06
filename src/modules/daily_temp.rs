@@ -1,4 +1,5 @@
-use image::{Rgb, RgbImage};
+use image::RgbImage;
+use itertools::Itertools;
 use rusttype::Font;
 
 use crate::{
@@ -9,6 +10,7 @@ use crate::{
 		vertical_lines_and_labels, MarkIntervals, Padding, Spacing,
 	},
 	from_args::{data_from_args, FromArgs},
+	util::previous_and_next_multiple,
 };
 const PADDING: Padding = Padding {
 	above: 7,
@@ -23,12 +25,18 @@ const SPACING: Spacing = Spacing {
 const FONT_SCALE: rusttype::Scale = rusttype::Scale { x: 14.0, y: 14.0 };
 
 pub fn create(font: Font, args: Vec<String>) -> RgbImage {
-	let data: Vec<HourlyTempData> = data_from_args(args);
-	let temp_range = calculate_grid_range(&data);
+	let data: Vec<HourlyTemps> = data_from_args(args);
+	let temp_range = data
+		.iter()
+		.flat_map(|day| [day.temp_min, day.temp_max])
+		.minmax()
+		.into_option()
+		.unwrap_or((0, 0));
+	let chart_temp_range = previous_and_next_multiple(Range::new(temp_range.0, temp_range.1), 4);
 	let width = SPACING.horizontal * (data.len() - 1) as u32 + PADDING.horizontal();
-	let height = temp_range.len() as u32 * SPACING.vertical / 100 + PADDING.vertical();
+	let height = chart_temp_range.len() as u32 * SPACING.vertical / 100 + PADDING.vertical();
 	let mut canvas = RgbImage::new(width, height);
-	fill_canvas(&mut canvas, Rgb::<u8>([0, 0, 0]));
+	fill_canvas(&mut canvas, colours::BACKGROUND);
 	draw_outer_lines(&mut canvas, PADDING);
 	vertical_lines_and_labels(
 		&mut canvas,
@@ -41,7 +49,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 	);
 	horizontal_lines_and_labels(
 		&mut canvas,
-		temp_range,
+		chart_temp_range,
 		MarkIntervals::new(2, 4),
 		&font,
 		FONT_SCALE,
@@ -52,7 +60,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		&mut canvas,
 		data.iter().map(|daily| daily.temp_min),
 		colours::MIN_TEMP,
-		temp_range.end(),
+		chart_temp_range.end(),
 		PADDING,
 		SPACING,
 	);
@@ -60,7 +68,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		&mut canvas,
 		data.iter().map(|daily| daily.temp_max),
 		colours::MAX_TEMP,
-		temp_range.end(),
+		chart_temp_range.end(),
 		PADDING,
 		SPACING,
 	);
@@ -68,7 +76,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct HourlyTempData {
+struct HourlyTemps {
 	/// Day of the month
 	day: u8,
 	/// Minimum temperature in centidegrees Celsius
@@ -77,7 +85,7 @@ struct HourlyTempData {
 	temp_max: i32,
 }
 
-impl FromArgs<3> for HourlyTempData {
+impl FromArgs<3> for HourlyTemps {
 	fn from_args([day, temp_min, temp_max]: [String; 3]) -> Self {
 		let day = day.parse().expect("Could not parse a day argument");
 		let temp_min = temp_min
@@ -92,23 +100,4 @@ impl FromArgs<3> for HourlyTempData {
 			temp_max,
 		}
 	}
-}
-
-/// Get the lowest and highest temperatures that the grid will show. These are the closest multiples of 4 degrees Celsius that include all data.
-fn calculate_grid_range(data: &[HourlyTempData]) -> Range<i32> {
-	let (all_temps_min, all_temps_max) = data.iter().fold(
-		(i32::MAX, i32::MIN),
-		|(min, max),
-		 HourlyTempData {
-		     temp_min, temp_max, ..
-		 }| { (min.min(*temp_min), max.max(*temp_max)) },
-	);
-	let round_up = match all_temps_max.rem_euclid(400) {
-		0 => 0,
-		n => 400 - n,
-	};
-	Range::new(
-		all_temps_min - all_temps_min.rem_euclid(400),
-		all_temps_max + round_up,
-	)
 }
