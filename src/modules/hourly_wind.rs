@@ -58,10 +58,10 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		SPACING.vertical,
 	);
 	let gradient = MultiPointGradient::new(vec![
-		GradientPoint::from_rgb(PADDING.below, [0, 255, 33]),
-		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 7, [255, 255, 33]),
-		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 14, [255, 0, 33]),
-		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 21, [188, 66, 255]),
+		GradientPoint::from_rgb(PADDING.below, [70, 119, 67]),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 7, [118, 118, 62]),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 14, [122, 67, 62]),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 21, [103, 78, 122]),
 	]);
 	draw_graph_lines_with_gradient(
 		&mut canvas,
@@ -72,10 +72,10 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		SPACING,
 	);
 	let gradient = MultiPointGradient::new(vec![
-		GradientPoint::from_rgb(PADDING.below, [70, 119, 67]),
-		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 7, [118, 118, 62]),
-		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 14, [122, 67, 62]),
-		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 21, [103, 78, 122]),
+		GradientPoint::from_rgb(PADDING.below, [0, 255, 33]),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 7, [255, 255, 33]),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 14, [255, 0, 33]),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 21, [188, 66, 255]),
 	]);
 	draw_graph_lines_with_gradient(
 		&mut canvas,
