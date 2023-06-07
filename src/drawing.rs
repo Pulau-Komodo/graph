@@ -332,11 +332,11 @@ pub fn draw_graph_lines_with_gradient(
 	for (index, (start, end)) in data.into_iter().tuple_windows().enumerate() {
 		let start = Point {
 			x: index as u32 * spacing.horizontal + padding.left,
-			y: start.abs_diff(max) as u32 * spacing.vertical / 100 + padding.above,
+			y: start.abs_diff(max) * spacing.vertical / 100 + padding.above,
 		};
 		let end = Point {
 			x: (index + 1) as u32 * spacing.horizontal + padding.left,
-			y: end.abs_diff(max) as u32 * spacing.vertical / 100 + padding.above,
+			y: end.abs_diff(max) * spacing.vertical / 100 + padding.above,
 		};
 		draw_line_segment_with_gradient(canvas, start, end, &gradient);
 	}

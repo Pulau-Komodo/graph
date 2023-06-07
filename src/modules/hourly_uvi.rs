@@ -24,8 +24,12 @@ const SPACING: Spacing = Spacing {
 };
 const FONT_SCALE: rusttype::Scale = rusttype::Scale { x: 14.0, y: 14.0 };
 
-pub fn create(font: Font, args: Vec<String>) -> RgbImage {
+pub fn parse_and_create(font: &Font, args: Vec<String>) -> RgbImage {
 	let data = data_from_args(args);
+	create(font, data)
+}
+
+pub fn create(font: &Font, data: Vec<HourlyUvi>) -> RgbImage {
 	let max_chart_uvi = next_multiple(
 		data.iter().map(|hour| hour.uvi).max().unwrap_or(0) as i32,
 		1,
@@ -39,16 +43,16 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		&mut canvas,
 		data.iter().map(|datum| datum.hour),
 		MarkIntervals::new(1, 2),
-		&font,
+		font,
 		FONT_SCALE,
 		PADDING,
 		SPACING.horizontal,
 	);
 	horizontal_lines_and_labels(
 		&mut canvas,
-		Range::new(0, max_chart_uvi as i32),
+		Range::new(0, max_chart_uvi),
 		MarkIntervals::new(1, 1),
-		&font,
+		font,
 		FONT_SCALE,
 		PADDING,
 		SPACING.vertical,
@@ -62,7 +66,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		&mut canvas,
 		data.iter().map(|day| day.uvi as i32),
 		gradient,
-		max_chart_uvi as i32,
+		max_chart_uvi,
 		PADDING,
 		SPACING,
 	);
@@ -70,7 +74,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct HourlyUvi {
+pub struct HourlyUvi {
 	/// Hour of the day
 	hour: u8,
 	/// UV index * 100

@@ -25,8 +25,12 @@ const SPACING: Spacing = Spacing {
 };
 const FONT_SCALE: rusttype::Scale = rusttype::Scale { x: 14.0, y: 14.0 };
 
-pub fn create(font: Font, args: Vec<String>) -> RgbImage {
-	let data: Vec<HourlyTemps> = data_from_args(args);
+pub fn parse_and_create(font: &Font, args: Vec<String>) -> RgbImage {
+	let data = data_from_args(args);
+	create(font, data)
+}
+
+pub fn create(font: &Font, data: Vec<HourlyTemps>) -> RgbImage {
 	let temp_range = data
 		.iter()
 		.flat_map(|hour| [hour.temp, hour.feels_like, hour.wet_bulb])
@@ -43,7 +47,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		&mut canvas,
 		data.iter().map(|hour| hour.hour),
 		MarkIntervals::new(1, 2),
-		&font,
+		font,
 		FONT_SCALE,
 		PADDING,
 		SPACING.horizontal,
@@ -52,7 +56,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		&mut canvas,
 		chart_temp_range,
 		MarkIntervals::new(2, 4),
-		&font,
+		font,
 		FONT_SCALE,
 		PADDING,
 		SPACING.vertical,
@@ -93,7 +97,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct HourlyTemps {
+pub struct HourlyTemps {
 	/// Hour of the day
 	hour: u8,
 	/// Dry-bulb temperature in centidegrees Celsius

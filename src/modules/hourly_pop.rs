@@ -23,8 +23,12 @@ const SPACING: Spacing = Spacing {
 };
 const FONT_SCALE: rusttype::Scale = rusttype::Scale { x: 14.0, y: 14.0 };
 
-pub fn create(font: Font, args: Vec<String>) -> RgbImage {
-	let data: Vec<HourlyPop> = data_from_args(args);
+pub fn parse_and_create(font: &Font, args: Vec<String>) -> RgbImage {
+	let data = data_from_args(args);
+	create(font, data)
+}
+
+pub fn create(font: &Font, data: Vec<HourlyPop>) -> RgbImage {
 	let max_chart_pop = 10_000;
 	let width = (data.len() - 1) as u32 * SPACING.horizontal + PADDING.horizontal();
 	let height = max_chart_pop * SPACING.vertical / 100 + PADDING.vertical();
@@ -35,7 +39,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		&mut canvas,
 		data.iter().map(|datum| datum.hour),
 		MarkIntervals::new(1, 2),
-		&font,
+		font,
 		FONT_SCALE,
 		PADDING,
 		SPACING.horizontal,
@@ -44,7 +48,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		&mut canvas,
 		Range::new(0, max_chart_pop as i32),
 		MarkIntervals::new(10, 20),
-		&font,
+		font,
 		FONT_SCALE,
 		PADDING,
 		SPACING.vertical,
@@ -61,7 +65,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct HourlyPop {
+pub struct HourlyPop {
 	/// Hour of the day
 	hour: u8,
 	/// Probability of precipitation * 100

@@ -25,8 +25,12 @@ const SPACING: Spacing = Spacing {
 const DIRECTION_GRAPH_HEIGHT: u32 = 13;
 const FONT_SCALE: rusttype::Scale = rusttype::Scale { x: 14.0, y: 14.0 };
 
-pub fn create(font: Font, args: Vec<String>) -> RgbImage {
+pub fn parse_and_create(font: &Font, args: Vec<String>) -> RgbImage {
 	let data = data_from_args(args);
+	create(font, data)
+}
+
+pub fn create(font: &Font, data: Vec<HourlyWind>) -> RgbImage {
 	let max_chart_speed = next_multiple(
 		data.iter()
 			.flat_map(|hour| [hour.wind_speed, hour.wind_gust])
@@ -43,16 +47,16 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		&mut canvas,
 		data.iter().map(|data| data.hour),
 		MarkIntervals::new(1, 2),
-		&font,
+		font,
 		FONT_SCALE,
 		PADDING,
 		SPACING.horizontal,
 	);
 	horizontal_lines_and_labels(
 		&mut canvas,
-		Range::new(0, max_chart_speed as i32),
+		Range::new(0, max_chart_speed),
 		MarkIntervals::new(5, 5),
-		&font,
+		font,
 		FONT_SCALE,
 		PADDING,
 		SPACING.vertical,
@@ -67,7 +71,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		&mut canvas,
 		data.iter().map(|hour| hour.wind_gust as i32),
 		gradient,
-		max_chart_speed as i32,
+		max_chart_speed,
 		PADDING,
 		SPACING,
 	);
@@ -81,7 +85,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		&mut canvas,
 		data.iter().map(|hour| hour.wind_speed as i32),
 		gradient,
-		max_chart_speed as i32,
+		max_chart_speed,
 		PADDING,
 		SPACING,
 	);
@@ -101,7 +105,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 	canvas
 }
 
-struct HourlyWind {
+pub struct HourlyWind {
 	/// Hour of the day
 	hour: u8,
 	/// Wind speed in cm/s

@@ -1,5 +1,6 @@
 use graph::modules::{
-	daily_temp, hourly_pop, hourly_precipitation, hourly_temp, hourly_uvi, hourly_wind,
+	daily_temp, hourly_composite, hourly_pop, hourly_precipitation, hourly_temp, hourly_uvi,
+	hourly_wind,
 };
 
 use image::{codecs::png::PngEncoder, ColorType, ImageEncoder, ImageFormat};
@@ -15,12 +16,13 @@ fn main() {
 	}
 	let args: Vec<_> = args.collect();
 	let canvas = match mode.as_str() {
-		"daily_temp" => daily_temp::create(font, args),
-		"hourly_pop" => hourly_pop::create(font, args),
-		"hourly_precipitation" => hourly_precipitation::create(font, args),
-		"hourly_temp" => hourly_temp::create(font, args),
-		"hourly_uvi" => hourly_uvi::create(font, args),
-		"hourly_wind" => hourly_wind::create(font, args),
+		"daily_temp" => daily_temp::parse_and_create(&font, args),
+		"hourly_pop" => hourly_pop::parse_and_create(&font, args),
+		"hourly_precipitation" => hourly_precipitation::parse_and_create(&font, args),
+		"hourly_temp" => hourly_temp::parse_and_create(&font, args),
+		"hourly_uvi" => hourly_uvi::parse_and_create(&font, args),
+		"hourly_wind" => hourly_wind::parse_and_create(&font, args),
+		"hourly_composite" => hourly_composite::parse_and_create(&font, args),
 		x => panic!("Unexpected first argument {x}"),
 	};
 

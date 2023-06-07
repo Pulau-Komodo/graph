@@ -24,8 +24,17 @@ const SPACING: Spacing = Spacing {
 };
 const FONT_SCALE: rusttype::Scale = rusttype::Scale { x: 14.0, y: 14.0 };
 
-pub fn create(font: Font, args: Vec<String>) -> RgbImage {
-	let data: Vec<HourlyTemps> = data_from_args(args);
+/// Makes a graph showing daily min and max temp.
+///
+/// Arguments are in the format day, temp min, temp max, repeat. Temperatures are in centidegrees Celsius.
+///
+/// Example input values: `28 -555 -333 29 -222 111 30 -333 222 1 0 444 2 222 555 3 111 666 4 222 555 5 555 2222`.
+pub fn parse_and_create(font: &Font, args: Vec<String>) -> RgbImage {
+	let data = data_from_args(args);
+	create(font, data)
+}
+
+pub fn create(font: &Font, data: Vec<HourlyTemps>) -> RgbImage {
 	let temp_range = data
 		.iter()
 		.flat_map(|day| [day.temp_min, day.temp_max])
@@ -42,7 +51,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		&mut canvas,
 		data.iter().map(|day| day.day),
 		MarkIntervals::new(1, 1),
-		&font,
+		font,
 		FONT_SCALE,
 		PADDING,
 		SPACING.horizontal,
@@ -51,7 +60,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 		&mut canvas,
 		chart_temp_range,
 		MarkIntervals::new(2, 4),
-		&font,
+		font,
 		FONT_SCALE,
 		PADDING,
 		SPACING.vertical,
@@ -76,7 +85,7 @@ pub fn create(font: Font, args: Vec<String>) -> RgbImage {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct HourlyTemps {
+pub struct HourlyTemps {
 	/// Day of the month
 	day: u8,
 	/// Minimum temperature in centidegrees Celsius

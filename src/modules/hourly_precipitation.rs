@@ -1,4 +1,5 @@
 use image::{Rgb, RgbImage};
+use rusttype::Font;
 
 use crate::{
 	colours,
@@ -23,8 +24,12 @@ const SPACING: Spacing = Spacing {
 };
 const FONT_SCALE: rusttype::Scale = rusttype::Scale { x: 14.0, y: 14.0 };
 
-pub fn create(font: rusttype::Font, args: Vec<String>) -> RgbImage {
-	let data: Vec<HourlyPrecipitation> = data_from_args(args);
+pub fn parse_and_create(font: &Font, args: Vec<String>) -> RgbImage {
+	let data = data_from_args(args);
+	create(font, data)
+}
+
+pub fn create(font: &Font, data: Vec<HourlyPrecipitation>) -> RgbImage {
 	let max_chart_precipitation = next_multiple(
 		data.iter()
 			.flat_map(|hour| [hour.rain as i32, hour.snow as i32])
@@ -41,7 +46,7 @@ pub fn create(font: rusttype::Font, args: Vec<String>) -> RgbImage {
 		&mut canvas,
 		data.iter().map(|hour| hour.hour),
 		MarkIntervals::new(1, 2),
-		&font,
+		font,
 		FONT_SCALE,
 		PADDING,
 		SPACING.horizontal,
@@ -50,7 +55,7 @@ pub fn create(font: rusttype::Font, args: Vec<String>) -> RgbImage {
 		&mut canvas,
 		Range::new(0, max_chart_precipitation as i32),
 		MarkIntervals::new(1, 1),
-		&font,
+		font,
 		FONT_SCALE,
 		PADDING,
 		SPACING.vertical,
@@ -75,7 +80,7 @@ pub fn create(font: rusttype::Font, args: Vec<String>) -> RgbImage {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct HourlyPrecipitation {
+pub struct HourlyPrecipitation {
 	/// Hour of the day
 	hour: u8,
 	/// Amount of rain in mm * 100
