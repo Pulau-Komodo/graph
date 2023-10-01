@@ -298,6 +298,72 @@ pub fn vertical_lines_and_labels(
 	}
 }
 
+pub fn vertical_lines_and_bar_labels(
+	canvas: &mut RgbImage,
+	data: impl Iterator<Item = u8>,
+	intervals: MarkIntervals,
+	font: &rusttype::Font,
+	font_scale: Scale,
+	padding: Padding,
+	spacing: u32,
+) {
+	let height = canvas.height();
+	let mut count = 0;
+	for (index, item) in data.enumerate().step_by(intervals.line()) {
+		count = index;
+		let x = padding.left + index as u32 * spacing;
+		let line_colour = if index % intervals.label() == 0 {
+			colours::BRIGHTER_GRID_LINES
+		} else {
+			colours::GRID_LINES
+		};
+		draw_line_segment(
+			canvas,
+			Point {
+				x,
+				y: padding.above,
+			},
+			Point {
+				x,
+				y: height - padding.below,
+			},
+			line_colour,
+		);
+		if index % intervals.label() == 0 {
+			let text = &format!("{}", item);
+			let (text_width, _text_height) = imageproc::drawing::text_size(font_scale, font, text);
+			imageproc::drawing::draw_text_mut(
+				canvas,
+				colours::TEXT,
+				x as i32 - (text_width - spacing as i32) / 2,
+				(height - padding.below + 5) as i32,
+				font_scale,
+				font,
+				text,
+			);
+		}
+	}
+	count += intervals.line();
+	let x = padding.left + count as u32 * spacing;
+	let line_colour = if count % intervals.label() == 0 {
+		colours::BRIGHTER_GRID_LINES
+	} else {
+		colours::GRID_LINES
+	};
+	draw_line_segment(
+		canvas,
+		Point {
+			x,
+			y: padding.above,
+		},
+		Point {
+			x,
+			y: height - padding.below,
+		},
+		line_colour,
+	);
+}
+
 /// Draws the line graph lines onto the canvas.
 pub fn draw_graph_lines(
 	canvas: &mut RgbImage,

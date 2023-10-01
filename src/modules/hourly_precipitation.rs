@@ -63,7 +63,7 @@ pub fn create(font: &Font, data: Vec<HourlyPrecipitation>) -> RgbImage {
 	draw_graph_lines(
 		&mut canvas,
 		data.iter().map(|hour| hour.rain as i32),
-		Rgb([0, 148, 255]),
+		colours::RAIN,
 		max_chart_precipitation as i32,
 		PADDING,
 		SPACING,

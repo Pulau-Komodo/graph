@@ -1,6 +1,6 @@
 use graph::modules::{
 	daily_temp, hourly_composite, hourly_pop, hourly_precipitation, hourly_temp, hourly_uvi,
-	hourly_wind,
+	hourly_wind, minutely_precipitation,
 };
 
 use image::{codecs::png::PngEncoder, ColorType, ImageEncoder, ImageFormat};
@@ -23,6 +23,7 @@ fn main() {
 		"hourly_uvi" => hourly_uvi::parse_and_create(&font, args),
 		"hourly_wind" => hourly_wind::parse_and_create(&font, args),
 		"hourly_composite" => hourly_composite::parse_and_create(&font, args),
+		"minutely_precipitation" => minutely_precipitation::parse_and_create(&font, args),
 		x => panic!("Unexpected first argument {x}"),
 	};
 
