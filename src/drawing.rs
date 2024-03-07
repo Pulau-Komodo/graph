@@ -20,7 +20,7 @@ pub fn draw_line_segment(
 }
 
 /// Gradient based on height
-pub fn draw_line_segment_with_gradient(
+pub fn _draw_line_segment_with_gradient(
 	canvas: &mut RgbImage,
 	start: Point<u32>,
 	end: Point<u32>,
@@ -30,6 +30,21 @@ pub fn draw_line_segment_with_gradient(
 		let gradient_point = canvas.height() - point.y;
 		let colour = Rgb(gradient.get_colour(gradient_point));
 		canvas.put_pixel(point.x, point.y, colour);
+	}
+}
+
+/// Gradient based on height
+pub fn draw_bar_with_gradient(
+	canvas: &mut RgbImage,
+	rectangle: Rect,
+	gradient: &MultiPointGradient,
+) {
+	for y in rectangle.top()..=rectangle.bottom() {
+		let gradient_point = canvas.height() - y as u32;
+		let colour = Rgb(gradient.get_colour(gradient_point));
+		for x in rectangle.left()..=rectangle.right() {
+			canvas.put_pixel(x as u32, y as u32, colour)
+		}
 	}
 }
 
@@ -393,7 +408,7 @@ pub fn draw_graph_lines(
 }
 
 /// Draws the line graph lines onto the canvas with a height-based gradient.
-pub fn draw_graph_lines_with_gradient(
+pub fn _draw_graph_lines_with_gradient(
 	canvas: &mut RgbImage,
 	data: impl IntoIterator<Item = i32>,
 	gradient: MultiPointGradient,
@@ -410,7 +425,7 @@ pub fn draw_graph_lines_with_gradient(
 			x: (index + 1) as u32 * spacing.horizontal + padding.left,
 			y: end.abs_diff(max) * spacing.vertical / 100 + padding.above,
 		};
-		draw_line_segment_with_gradient(canvas, start, end, &gradient);
+		_draw_line_segment_with_gradient(canvas, start, end, &gradient);
 	}
 }
 
@@ -436,6 +451,32 @@ pub fn draw_graph_bars(
 			)
 			.of_size(spacing.horizontal - 1, bar_height),
 			colour,
+		);
+	}
+}
+
+pub fn draw_graph_bars_with_gradient(
+	canvas: &mut RgbImage,
+	data: impl IntoIterator<Item = i32>,
+	gradient: MultiPointGradient,
+	padding: Padding,
+	spacing: Spacing,
+) {
+	let height = canvas.height();
+	for (index, value) in data.into_iter().enumerate() {
+		let x_offset = padding.left + index as u32 * spacing.horizontal;
+		let bar_height = value as u32 * spacing.vertical / 100;
+		if bar_height == 0 {
+			continue;
+		}
+		draw_bar_with_gradient(
+			canvas,
+			Rect::at(
+				(x_offset + 1) as i32,
+				(height - padding.below - bar_height) as i32,
+			)
+			.of_size(spacing.horizontal - 1, bar_height),
+			&gradient,
 		);
 	}
 }

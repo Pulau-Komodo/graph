@@ -6,7 +6,7 @@ use crate::{
 	colours,
 	common_types::{GradientPoint, MultiPointGradient, Point, Range},
 	drawing::{
-		draw_graph_lines_with_gradient, draw_line_segment, draw_outer_lines, fill_canvas,
+		draw_graph_bars_with_gradient, draw_line_segment, draw_outer_lines, fill_canvas,
 		horizontal_lines_and_labels, vertical_lines_and_labels, MarkIntervals, Padding, Spacing,
 	},
 	util::next_multiple,
@@ -38,7 +38,7 @@ pub fn create(font: &Font, data: Vec<HourlyWind>) -> RgbImage {
 			.unwrap_or(0) as i32,
 		5,
 	);
-	let width = (data.len() - 1) as u32 * SPACING.horizontal + PADDING.horizontal();
+	let width = data.len() as u32 * SPACING.horizontal + PADDING.horizontal();
 	let height = max_chart_speed as u32 * SPACING.vertical / 100 + PADDING.vertical();
 	let mut canvas = RgbImage::new(width, height);
 	fill_canvas(&mut canvas, colours::BACKGROUND);
@@ -67,11 +67,10 @@ pub fn create(font: &Font, data: Vec<HourlyWind>) -> RgbImage {
 		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 14, [122, 67, 62]),
 		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 21, [103, 78, 122]),
 	]);
-	draw_graph_lines_with_gradient(
+	draw_graph_bars_with_gradient(
 		&mut canvas,
 		data.iter().map(|hour| hour.wind_gust as i32),
 		gradient,
-		max_chart_speed,
 		PADDING,
 		SPACING,
 	);
@@ -81,11 +80,10 @@ pub fn create(font: &Font, data: Vec<HourlyWind>) -> RgbImage {
 		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 14, [255, 0, 33]),
 		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 21, [188, 66, 255]),
 	]);
-	draw_graph_lines_with_gradient(
+	draw_graph_bars_with_gradient(
 		&mut canvas,
 		data.iter().map(|hour| hour.wind_speed as i32),
 		gradient,
-		max_chart_speed,
 		PADDING,
 		SPACING,
 	);

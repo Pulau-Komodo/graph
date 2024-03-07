@@ -5,7 +5,7 @@ use crate::{
 	colours,
 	common_types::Range,
 	drawing::{
-		draw_graph_lines, draw_outer_lines, fill_canvas, horizontal_lines_and_labels,
+		draw_graph_bars, draw_outer_lines, fill_canvas, horizontal_lines_and_labels,
 		vertical_lines_and_labels, MarkIntervals, Padding, Spacing,
 	},
 	from_args::{data_from_args, FromArgs},
@@ -30,7 +30,7 @@ pub fn parse_and_create(font: &Font, args: Vec<String>) -> RgbImage {
 
 pub fn create(font: &Font, data: Vec<HourlyPop>) -> RgbImage {
 	let max_chart_pop = 10_000;
-	let width = (data.len() - 1) as u32 * SPACING.horizontal + PADDING.horizontal();
+	let width = data.len() as u32 * SPACING.horizontal + PADDING.horizontal();
 	let height = max_chart_pop * SPACING.vertical / 100 + PADDING.vertical();
 	let mut canvas = RgbImage::new(width, height);
 	fill_canvas(&mut canvas, colours::BACKGROUND);
@@ -53,11 +53,10 @@ pub fn create(font: &Font, data: Vec<HourlyPop>) -> RgbImage {
 		PADDING,
 		SPACING.vertical,
 	);
-	draw_graph_lines(
+	draw_graph_bars(
 		&mut canvas,
 		data.iter().map(|datum| datum.chance as i32),
 		Rgb([0, 148, 255]),
-		max_chart_pop as i32,
 		PADDING,
 		SPACING,
 	);

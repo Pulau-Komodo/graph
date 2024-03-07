@@ -5,8 +5,8 @@ use crate::{
 	colours,
 	common_types::Range,
 	drawing::{
-		draw_graph_lines, draw_outer_lines, fill_canvas, horizontal_lines_and_labels,
-		vertical_lines_and_labels, MarkIntervals, Padding, Spacing,
+		draw_graph_bars, draw_outer_lines, fill_canvas, horizontal_lines_and_labels,
+		vertical_lines_and_bar_labels, MarkIntervals, Padding, Spacing,
 	},
 	from_args::{data_from_args, FromArgs},
 	util::next_multiple,
@@ -37,12 +37,12 @@ pub fn create(font: &Font, data: Vec<HourlyPrecipitation>) -> RgbImage {
 			.unwrap_or(0),
 		1,
 	) as u32;
-	let width = (data.len() - 1) as u32 * SPACING.horizontal + PADDING.horizontal();
+	let width = data.len() as u32 * SPACING.horizontal + PADDING.horizontal();
 	let height = max_chart_precipitation * SPACING.vertical / 100 + PADDING.vertical();
 	let mut canvas = RgbImage::new(width, height);
 	fill_canvas(&mut canvas, colours::BACKGROUND);
 	draw_outer_lines(&mut canvas, PADDING);
-	vertical_lines_and_labels(
+	vertical_lines_and_bar_labels(
 		&mut canvas,
 		data.iter().map(|hour| hour.hour),
 		MarkIntervals::new(1, 2),
@@ -60,19 +60,17 @@ pub fn create(font: &Font, data: Vec<HourlyPrecipitation>) -> RgbImage {
 		PADDING,
 		SPACING.vertical,
 	);
-	draw_graph_lines(
+	draw_graph_bars(
 		&mut canvas,
 		data.iter().map(|hour| hour.rain as i32),
 		colours::RAIN,
-		max_chart_precipitation as i32,
 		PADDING,
 		SPACING,
 	);
-	draw_graph_lines(
+	draw_graph_bars(
 		&mut canvas,
 		data.iter().map(|hour| hour.snow as i32),
 		Rgb([216, 239, 255]),
-		max_chart_precipitation as i32,
 		PADDING,
 		SPACING,
 	);

@@ -6,7 +6,7 @@ use crate::{
 	colours,
 	common_types::{GradientPoint, MultiPointGradient, Range},
 	drawing::{
-		draw_graph_lines_with_gradient, draw_outer_lines, fill_canvas, horizontal_lines_and_labels,
+		draw_graph_bars_with_gradient, draw_outer_lines, fill_canvas, horizontal_lines_and_labels,
 		vertical_lines_and_labels, MarkIntervals, Padding, Spacing,
 	},
 	util::next_multiple,
@@ -34,7 +34,7 @@ pub fn create(font: &Font, data: Vec<HourlyUvi>) -> RgbImage {
 		data.iter().map(|hour| hour.uvi).max().unwrap_or(0) as i32,
 		1,
 	);
-	let width = (data.len() - 1) as u32 * SPACING.horizontal + PADDING.horizontal();
+	let width = data.len() as u32 * SPACING.horizontal + PADDING.horizontal();
 	let height = max_chart_uvi as u32 * SPACING.vertical / 100 + PADDING.vertical();
 	let mut canvas = RgbImage::new(width, height);
 	fill_canvas(&mut canvas, colours::BACKGROUND);
@@ -62,11 +62,10 @@ pub fn create(font: &Font, data: Vec<HourlyUvi>) -> RgbImage {
 		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 9 / 2, [255, 255, 33]),
 		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 9, [255, 0, 33]),
 	]);
-	draw_graph_lines_with_gradient(
+	draw_graph_bars_with_gradient(
 		&mut canvas,
 		data.iter().map(|day| day.uvi as i32),
 		gradient,
-		max_chart_uvi,
 		PADDING,
 		SPACING,
 	);
