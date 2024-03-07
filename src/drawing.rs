@@ -309,8 +309,11 @@ pub fn vertical_lines_and_bar_labels(
 ) {
 	let height = canvas.height();
 	let mut count = 0;
-	for (index, item) in data.enumerate().step_by(intervals.line()) {
+	for (index, item) in data.enumerate() {
 		count = index;
+		if index % intervals.line() != 0 {
+			continue;
+		}
 		let x = padding.left + index as u32 * spacing;
 		let line_colour = if index % intervals.label() == 0 {
 			colours::BRIGHTER_GRID_LINES
@@ -343,25 +346,27 @@ pub fn vertical_lines_and_bar_labels(
 			);
 		}
 	}
-	count += intervals.line();
-	let x = padding.left + count as u32 * spacing;
-	let line_colour = if count % intervals.label() == 0 {
-		colours::BRIGHTER_GRID_LINES
-	} else {
-		colours::GRID_LINES
-	};
-	draw_line_segment(
-		canvas,
-		Point {
-			x,
-			y: padding.above,
-		},
-		Point {
-			x,
-			y: height - padding.below,
-		},
-		line_colour,
-	);
+	count += 1;
+	if count % intervals.line() == 0 {
+		let x = padding.left + count as u32 * spacing;
+		let line_colour = if count % intervals.label() == 0 {
+			colours::BRIGHTER_GRID_LINES
+		} else {
+			colours::GRID_LINES
+		};
+		draw_line_segment(
+			canvas,
+			Point {
+				x,
+				y: padding.above,
+			},
+			Point {
+				x,
+				y: height - padding.below,
+			},
+			line_colour,
+		);
+	}
 }
 
 /// Draws the line graph lines onto the canvas.
