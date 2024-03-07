@@ -62,10 +62,13 @@ pub fn create(font: &Font, data: Vec<HourlyWind>) -> RgbImage {
 		SPACING.vertical,
 	);
 	let gradient = MultiPointGradient::new(vec![
-		GradientPoint::from_rgb(PADDING.below, [70, 119, 67]),
-		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 7, [118, 118, 62]),
-		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 14, [122, 67, 62]),
-		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 21, [103, 78, 122]),
+		GradientPoint::from_rgb(PADDING.below, colours::GUST_LOW),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 7, colours::GUST_MEDIUM),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 14, colours::GUST_HIGH),
+		GradientPoint::from_rgb(
+			PADDING.below + SPACING.vertical * 21,
+			colours::GUST_VERY_HIGH,
+		),
 	]);
 	draw_graph_bars_with_gradient(
 		&mut canvas,
@@ -75,10 +78,13 @@ pub fn create(font: &Font, data: Vec<HourlyWind>) -> RgbImage {
 		SPACING,
 	);
 	let gradient = MultiPointGradient::new(vec![
-		GradientPoint::from_rgb(PADDING.below, [0, 255, 33]),
-		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 7, [255, 255, 33]),
-		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 14, [255, 0, 33]),
-		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 21, [188, 66, 255]),
+		GradientPoint::from_rgb(PADDING.below, colours::WIND_LOW),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 7, colours::WIND_MEDIUM),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 14, colours::WIND_HIGH),
+		GradientPoint::from_rgb(
+			PADDING.below + SPACING.vertical * 21,
+			colours::WIND_VERY_HIGH,
+		),
 	]);
 	draw_graph_bars_with_gradient(
 		&mut canvas,

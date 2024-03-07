@@ -1,4 +1,4 @@
-use image::{Rgb, RgbImage};
+use image::RgbImage;
 use rusttype::Font;
 
 use crate::{
@@ -70,7 +70,7 @@ pub fn create(font: &Font, data: Vec<HourlyPrecipitation>) -> RgbImage {
 	draw_graph_bars(
 		&mut canvas,
 		data.iter().map(|hour| hour.snow as i32),
-		Rgb([216, 239, 255]),
+		colours::SNOW,
 		PADDING,
 		SPACING,
 	);

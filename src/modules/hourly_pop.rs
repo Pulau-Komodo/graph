@@ -1,4 +1,4 @@
-use image::{Rgb, RgbImage};
+use image::RgbImage;
 use rusttype::Font;
 
 use crate::{
@@ -56,7 +56,7 @@ pub fn create(font: &Font, data: Vec<HourlyPop>) -> RgbImage {
 	draw_graph_bars(
 		&mut canvas,
 		data.iter().map(|datum| datum.chance as i32),
-		Rgb([0, 148, 255]),
+		colours::POP,
 		PADDING,
 		SPACING,
 	);

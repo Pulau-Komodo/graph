@@ -1,4 +1,4 @@
-use image::{Rgb, RgbImage};
+use image::RgbImage;
 use itertools::Itertools;
 use rusttype::Font;
 
@@ -64,7 +64,7 @@ pub fn create(font: &Font, data: Vec<HourlyTemps>) -> RgbImage {
 	draw_graph_lines(
 		&mut canvas,
 		data.iter().map(|hour| hour.feels_like),
-		Rgb([0, 255, 33]),
+		colours::TEMP_FEELS_LIKE,
 		chart_temp_range.end(),
 		PADDING,
 		SPACING,
@@ -72,7 +72,7 @@ pub fn create(font: &Font, data: Vec<HourlyTemps>) -> RgbImage {
 	draw_graph_lines(
 		&mut canvas,
 		data.iter().map(|hour| hour.wet_bulb),
-		Rgb([0, 148, 255]),
+		colours::TEMP_WET_BULB,
 		chart_temp_range.end(),
 		PADDING,
 		SPACING,
@@ -80,7 +80,7 @@ pub fn create(font: &Font, data: Vec<HourlyTemps>) -> RgbImage {
 	draw_graph_lines(
 		&mut canvas,
 		data.iter().map(|hour| hour.temp),
-		Rgb([255, 0, 0]),
+		colours::TEMP,
 		chart_temp_range.end(),
 		PADDING,
 		SPACING,

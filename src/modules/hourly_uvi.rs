@@ -58,9 +58,12 @@ pub fn create(font: &Font, data: Vec<HourlyUvi>) -> RgbImage {
 		SPACING.vertical,
 	);
 	let gradient = MultiPointGradient::new(vec![
-		GradientPoint::from_rgb(PADDING.below, [0, 255, 33]),
-		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 9 / 2, [255, 255, 33]),
-		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 9, [255, 0, 33]),
+		GradientPoint::from_rgb(PADDING.below, colours::UVI_LOW),
+		GradientPoint::from_rgb(
+			PADDING.below + SPACING.vertical * 9 / 2,
+			colours::UVI_MEDIUM,
+		),
+		GradientPoint::from_rgb(PADDING.below + SPACING.vertical * 9, colours::UVI_HIGH),
 	]);
 	draw_graph_bars_with_gradient(
 		&mut canvas,

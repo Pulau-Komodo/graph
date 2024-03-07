@@ -68,7 +68,7 @@ pub fn create(font: &Font, data: Vec<HourlyTemps>) -> RgbImage {
 	draw_graph_lines(
 		&mut canvas,
 		data.iter().map(|daily| daily.temp_min),
-		colours::MIN_TEMP,
+		colours::TEMP_MIN,
 		chart_temp_range.end(),
 		PADDING,
 		SPACING,
@@ -76,7 +76,7 @@ pub fn create(font: &Font, data: Vec<HourlyTemps>) -> RgbImage {
 	draw_graph_lines(
 		&mut canvas,
 		data.iter().map(|daily| daily.temp_max),
-		colours::MAX_TEMP,
+		colours::TEMP_MAX,
 		chart_temp_range.end(),
 		PADDING,
 		SPACING,
