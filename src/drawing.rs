@@ -1,4 +1,5 @@
 use image::{Rgb, RgbImage};
+use imageproc::{drawing::draw_filled_rect_mut, rect::Rect};
 use itertools::Itertools;
 use rusttype::Scale;
 
@@ -410,5 +411,31 @@ pub fn draw_graph_lines_with_gradient(
 			y: end.abs_diff(max) * spacing.vertical / 100 + padding.above,
 		};
 		draw_line_segment_with_gradient(canvas, start, end, &gradient);
+	}
+}
+
+pub fn draw_graph_bars(
+	canvas: &mut RgbImage,
+	data: impl IntoIterator<Item = i32>,
+	colour: Rgb<u8>,
+	padding: Padding,
+	spacing: Spacing,
+) {
+	let height = canvas.height();
+	for (index, value) in data.into_iter().enumerate() {
+		let x_offset = padding.left + index as u32 * spacing.horizontal;
+		let bar_height = value as u32 * spacing.vertical / 100;
+		if bar_height == 0 {
+			continue;
+		}
+		draw_filled_rect_mut(
+			canvas,
+			Rect::at(
+				(x_offset + 1) as i32,
+				(height - padding.below - bar_height) as i32,
+			)
+			.of_size(spacing.horizontal - 1, bar_height),
+			colour,
+		);
 	}
 }

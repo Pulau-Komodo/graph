@@ -1,5 +1,4 @@
 use image::RgbImage;
-use imageproc::{drawing::draw_filled_rect_mut, rect::Rect};
 use itertools::Itertools;
 use rusttype::Font;
 
@@ -7,8 +6,8 @@ use crate::{
 	colours,
 	common_types::Range,
 	drawing::{
-		draw_outer_lines, fill_canvas, horizontal_lines_and_labels, vertical_lines_and_bar_labels,
-		MarkIntervals, Padding, Spacing,
+		draw_graph_bars, draw_outer_lines, fill_canvas, horizontal_lines_and_labels,
+		vertical_lines_and_bar_labels, MarkIntervals, Padding, Spacing,
 	},
 	util::next_multiple,
 };
@@ -61,22 +60,14 @@ pub fn create(font: &Font, data: Vec<MinutelyPrecipitation>) -> RgbImage {
 		PADDING,
 		SPACING.vertical,
 	);
-	for (index, minutely) in data.into_iter().enumerate() {
-		let x_offset = PADDING.left + index as u32 * SPACING.horizontal;
-		let bar_height = minutely.precipitation as u32 * SPACING.vertical / 100;
-		if bar_height == 0 {
-			continue;
-		}
-		draw_filled_rect_mut(
-			&mut canvas,
-			Rect::at(
-				(x_offset + 1) as i32,
-				(height - PADDING.below - bar_height) as i32,
-			)
-			.of_size(SPACING.horizontal - 1, bar_height),
-			colours::RAIN,
-		);
-	}
+	draw_graph_bars(
+		&mut canvas,
+		data.into_iter()
+			.map(|minutely| minutely.precipitation as i32),
+		colours::RAIN,
+		PADDING,
+		SPACING,
+	);
 	canvas
 }
 
