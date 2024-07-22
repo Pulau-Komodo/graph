@@ -7,7 +7,7 @@ use image::{codecs::png::PngEncoder, ColorType, ImageEncoder, ImageFormat};
 
 fn main() {
 	let font_data: &[u8] = include_bytes!("../RobotoCondensed-Regular.ttf");
-	let font = rusttype::Font::try_from_bytes(font_data).expect("Failed to read font");
+	let font = ab_glyph::FontRef::try_from_slice(font_data).expect("Failed to read font");
 	let mut args = std::env::args();
 	let mut mode = args.nth(1).expect("No arguments used");
 	let to_file = mode.as_str() == "file";
@@ -35,7 +35,7 @@ fn main() {
 		let (width, height) = (canvas.width(), canvas.height());
 		let encoder = PngEncoder::new(std::io::stdout());
 		encoder
-			.write_image(&canvas, width, height, ColorType::Rgb8)
+			.write_image(&canvas, width, height, ColorType::Rgb8.into())
 			.expect("Failed to write image to stdout");
 	}
 }

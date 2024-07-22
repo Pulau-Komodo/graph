@@ -1,7 +1,7 @@
+use ab_glyph::{FontRef, PxScale};
 use image::{Rgb, RgbImage};
 use imageproc::{drawing::draw_filled_rect_mut, rect::Rect};
 use itertools::Itertools;
-use rusttype::Scale;
 
 use crate::{
 	colours,
@@ -136,6 +136,7 @@ impl Iterator for BresenhamLineIter {
 	}
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct Padding {
 	pub above: u32,
 	pub below: u32,
@@ -154,11 +155,13 @@ impl Padding {
 	}
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct Spacing {
 	pub horizontal: u32,
 	pub vertical: u32,
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct MarkIntervals {
 	line: usize,
 	label: usize,
@@ -225,8 +228,8 @@ pub fn horizontal_lines_and_labels(
 	canvas: &mut RgbImage,
 	data_range: Range<i32>,
 	intervals: MarkIntervals,
-	font: &rusttype::Font,
-	font_scale: Scale,
+	font: &FontRef,
+	font_scale: PxScale,
 	padding: Padding,
 	spacing: u32,
 ) {
@@ -255,14 +258,16 @@ pub fn horizontal_lines_and_labels(
 		);
 		if value % intervals.label() as i32 == 0 {
 			let text = &format!("{}", value);
-			let (text_width, text_height) = imageproc::drawing::text_size(font_scale, font, text);
+			let (text_width, text_height) = imageproc::drawing::text_size(font_scale, &font, text);
+			let text_width = text_width as i32;
+			let text_height = text_height as i32;
 			imageproc::drawing::draw_text_mut(
 				canvas,
 				colours::TEXT,
 				padding.left as i32 - text_width - 3,
 				y as i32 - text_height / 2,
 				font_scale,
-				font,
+				&font,
 				text,
 			);
 		}
@@ -273,8 +278,8 @@ pub fn vertical_lines_and_labels(
 	canvas: &mut RgbImage,
 	data: impl Iterator<Item = u8>,
 	intervals: MarkIntervals,
-	font: &rusttype::Font,
-	font_scale: Scale,
+	font: &FontRef,
+	font_scale: PxScale,
 	padding: Padding,
 	spacing: u32,
 ) {
@@ -300,14 +305,15 @@ pub fn vertical_lines_and_labels(
 		);
 		if index % intervals.label() == 0 {
 			let text = &format!("{}", item);
-			let (text_width, _text_height) = imageproc::drawing::text_size(font_scale, font, text);
+			let (text_width, _text_height) = imageproc::drawing::text_size(font_scale, &font, text);
+			let text_width = text_width as i32;
 			imageproc::drawing::draw_text_mut(
 				canvas,
 				colours::TEXT,
 				x as i32 - text_width / 2,
 				(height - padding.below + 5) as i32,
 				font_scale,
-				font,
+				&font,
 				text,
 			);
 		}
@@ -318,8 +324,8 @@ pub fn vertical_lines_and_bar_labels(
 	canvas: &mut RgbImage,
 	data: impl Iterator<Item = u8>,
 	intervals: MarkIntervals,
-	font: &rusttype::Font,
-	font_scale: Scale,
+	font: &FontRef,
+	font_scale: PxScale,
 	padding: Padding,
 	spacing: u32,
 ) {
@@ -350,14 +356,15 @@ pub fn vertical_lines_and_bar_labels(
 		);
 		if index % intervals.label() == 0 {
 			let text = &format!("{}", item);
-			let (text_width, _text_height) = imageproc::drawing::text_size(font_scale, font, text);
+			let (text_width, _text_height) = imageproc::drawing::text_size(font_scale, &font, text);
+			let text_width = text_width as i32;
 			imageproc::drawing::draw_text_mut(
 				canvas,
 				colours::TEXT,
 				x as i32 - (text_width - spacing as i32) / 2,
 				(height - padding.below + 5) as i32,
 				font_scale,
-				font,
+				&font,
 				text,
 			);
 		}

@@ -1,6 +1,6 @@
+use ab_glyph::FontRef;
 use image::RgbImage;
 use itertools::Itertools;
-use rusttype::Font;
 
 use crate::{
 	colours,
@@ -22,14 +22,14 @@ const SPACING: Spacing = Spacing {
 	horizontal: 8,
 	vertical: 10,
 };
-const FONT_SCALE: rusttype::Scale = rusttype::Scale { x: 14.0, y: 14.0 };
+const FONT_SCALE: ab_glyph::PxScale = ab_glyph::PxScale { x: 14.0, y: 14.0 };
 
-pub fn parse_and_create(font: &Font, args: Vec<String>) -> RgbImage {
+pub fn parse_and_create(font: &FontRef, args: Vec<String>) -> RgbImage {
 	let data = data_from_args(args);
 	create(font, data)
 }
 
-pub fn create(font: &Font, data: Vec<HourlyUvi>) -> RgbImage {
+pub fn create(font: &FontRef, data: Vec<HourlyUvi>) -> RgbImage {
 	let max_chart_uvi = next_multiple(
 		data.iter().map(|hour| hour.uvi).max().unwrap_or(0) as i32,
 		1,

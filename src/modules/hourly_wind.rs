@@ -1,6 +1,6 @@
+use ab_glyph::FontRef;
 use image::{Rgb, RgbImage};
 use itertools::Itertools;
-use rusttype::Font;
 
 use crate::{
 	colours,
@@ -23,14 +23,14 @@ const SPACING: Spacing = Spacing {
 	vertical: 5,
 };
 const DIRECTION_GRAPH_HEIGHT: u32 = 13;
-const FONT_SCALE: rusttype::Scale = rusttype::Scale { x: 14.0, y: 14.0 };
+const FONT_SCALE: ab_glyph::PxScale = ab_glyph::PxScale { x: 14.0, y: 14.0 };
 
-pub fn parse_and_create(font: &Font, args: Vec<String>) -> RgbImage {
+pub fn parse_and_create(font: &FontRef, args: Vec<String>) -> RgbImage {
 	let data = data_from_args(args);
 	create(font, data)
 }
 
-pub fn create(font: &Font, data: Vec<HourlyWind>) -> RgbImage {
+pub fn create(font: &FontRef, data: Vec<HourlyWind>) -> RgbImage {
 	let max_chart_speed = next_multiple(
 		data.iter()
 			.flat_map(|hour| [hour.wind_speed, hour.wind_gust])
