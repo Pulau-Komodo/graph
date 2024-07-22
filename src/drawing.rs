@@ -465,7 +465,7 @@ pub fn draw_graph_bars(
 pub fn draw_graph_bars_with_gradient(
 	canvas: &mut RgbImage,
 	data: impl IntoIterator<Item = i32>,
-	gradient: MultiPointGradient,
+	gradient: &MultiPointGradient,
 	padding: Padding,
 	spacing: Spacing,
 ) {
@@ -483,7 +483,7 @@ pub fn draw_graph_bars_with_gradient(
 				(height - padding.below - bar_height) as i32,
 			)
 			.of_size(spacing.horizontal - 1, bar_height),
-			&gradient,
+			gradient,
 		);
 	}
 }

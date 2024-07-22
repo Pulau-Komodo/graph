@@ -3,7 +3,7 @@ use image::{imageops, RgbImage};
 
 use crate::modules::{hourly_pop, hourly_precipitation, hourly_temp, hourly_uvi, hourly_wind};
 
-pub fn parse_and_create(font: &FontRef, args: Vec<String>) -> RgbImage {
+pub fn parse_and_create(font: &FontRef<'static>, args: Vec<String>) -> RgbImage {
 	let mut component_args = args.into_iter();
 	let temp_args = component_args.next().expect("No temperature arguments");
 	let temp_args = temp_args.split(' ').map(String::from).collect::<Vec<_>>();

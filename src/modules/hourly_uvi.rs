@@ -68,7 +68,7 @@ pub fn create(font: &FontRef, data: Vec<HourlyUvi>) -> RgbImage {
 	draw_graph_bars_with_gradient(
 		&mut canvas,
 		data.iter().map(|day| day.uvi as i32),
-		gradient,
+		&gradient,
 		PADDING,
 		SPACING,
 	);

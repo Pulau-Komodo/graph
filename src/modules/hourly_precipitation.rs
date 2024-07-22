@@ -4,11 +4,9 @@ use image::RgbImage;
 use crate::{
 	colours,
 	common_types::Range,
-	drawing::{
-		draw_graph_bars, draw_outer_lines, fill_canvas, horizontal_lines_and_labels,
-		vertical_lines_and_bar_labels, MarkIntervals, Padding, Spacing,
-	},
+	drawing::{MarkIntervals, Padding, Spacing},
 	from_args::{data_from_args, FromArgs},
+	generic_graph::{AxisGridLabels, Chart, SolidBars},
 	util::next_multiple,
 };
 
@@ -24,12 +22,12 @@ const SPACING: Spacing = Spacing {
 };
 const FONT_SCALE: ab_glyph::PxScale = ab_glyph::PxScale { x: 14.0, y: 14.0 };
 
-pub fn parse_and_create(font: &FontRef, args: Vec<String>) -> RgbImage {
+pub fn parse_and_create(font: &FontRef<'static>, args: Vec<String>) -> RgbImage {
 	let data = data_from_args(args);
 	create(font, data)
 }
 
-pub fn create(font: &FontRef, data: Vec<HourlyPrecipitation>) -> RgbImage {
+pub fn create(font: &FontRef<'static>, data: Vec<HourlyPrecipitation>) -> RgbImage {
 	let max_chart_precipitation = next_multiple(
 		data.iter()
 			.flat_map(|hour| [hour.rain as i32, hour.snow as i32])
@@ -37,44 +35,27 @@ pub fn create(font: &FontRef, data: Vec<HourlyPrecipitation>) -> RgbImage {
 			.unwrap_or(0),
 		1,
 	) as u32;
-	let width = data.len() as u32 * SPACING.horizontal + PADDING.horizontal();
-	let height = max_chart_precipitation * SPACING.vertical / 100 + PADDING.vertical();
-	let mut canvas = RgbImage::new(width, height);
-	fill_canvas(&mut canvas, colours::BACKGROUND);
-	draw_outer_lines(&mut canvas, PADDING);
-	vertical_lines_and_bar_labels(
-		&mut canvas,
-		data.iter().map(|hour| hour.hour),
-		MarkIntervals::new(1, 2),
-		font,
-		FONT_SCALE,
-		PADDING,
-		SPACING.horizontal,
-	);
-	horizontal_lines_and_labels(
-		&mut canvas,
-		Range::new(0, max_chart_precipitation as i32),
-		MarkIntervals::new(1, 1),
-		font,
-		FONT_SCALE,
-		PADDING,
-		SPACING.vertical,
-	);
-	draw_graph_bars(
-		&mut canvas,
-		data.iter().map(|hour| hour.rain as i32),
-		colours::RAIN,
-		PADDING,
-		SPACING,
-	);
-	draw_graph_bars(
-		&mut canvas,
-		data.iter().map(|hour| hour.snow as i32),
-		colours::SNOW,
-		PADDING,
-		SPACING,
-	);
-	canvas
+
+	let mut chart = Chart::new(data.len(), max_chart_precipitation, SPACING, PADDING);
+
+	chart.draw(AxisGridLabels {
+		vertical_intervals: MarkIntervals::new(1, 1),
+		horizontal_intervals: MarkIntervals::new(1, 2),
+		vertical_label_range: Range::new(0, max_chart_precipitation as i32),
+		horizontal_labels: data.iter().map(|hour| hour.hour),
+		font: font.clone(),
+		font_scale: FONT_SCALE,
+	});
+	chart.draw(SolidBars {
+		colour: colours::RAIN,
+		data: data.iter().map(|hour| hour.rain as i32),
+	});
+	chart.draw(SolidBars {
+		colour: colours::SNOW,
+		data: data.iter().map(|hour| hour.snow as i32),
+	});
+
+	chart.into_canvas()
 }
 
 #[derive(Debug, Clone, Copy)]

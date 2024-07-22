@@ -73,7 +73,7 @@ pub fn create(font: &FontRef, data: Vec<HourlyWind>) -> RgbImage {
 	draw_graph_bars_with_gradient(
 		&mut canvas,
 		data.iter().map(|hour| hour.wind_gust as i32),
-		gradient,
+		&gradient,
 		PADDING,
 		SPACING,
 	);
@@ -89,7 +89,7 @@ pub fn create(font: &FontRef, data: Vec<HourlyWind>) -> RgbImage {
 	draw_graph_bars_with_gradient(
 		&mut canvas,
 		data.iter().map(|hour| hour.wind_speed as i32),
-		gradient,
+		&gradient,
 		PADDING,
 		SPACING,
 	);
