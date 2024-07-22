@@ -78,9 +78,9 @@ pub fn create(font: &FontRef, data: Vec<HourlyUvi>) -> RgbImage {
 #[derive(Debug, Clone, Copy)]
 pub struct HourlyUvi {
 	/// Hour of the day
-	hour: u8,
+	pub hour: u8,
 	/// UV index * 100
-	uvi: u16,
+	pub uvi: u16,
 }
 
 impl HourlyUvi {
