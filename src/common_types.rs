@@ -73,7 +73,7 @@ impl MultiPointGradient {
 			.find_or_last(|(_start, end)| point <= end.point())
 			.unwrap();
 		let adjusted_point = (point - start.point()) as f32 / (end.point() - start.point()) as f32;
-		let adjusted_point = adjusted_point.min(1.0).max(0.0);
+		let adjusted_point = adjusted_point.clamp(0.0, 1.0);
 		/*println!(
 			"{point} adjusted to {adjusted_point} between {:?} and {:?}",
 			start, end
