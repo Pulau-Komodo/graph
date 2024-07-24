@@ -112,7 +112,7 @@ pub struct HourlyTemps {
 }
 
 impl HourlyTemps {
-	pub fn new(hour: u8, temp: f32, feels_like: f32, humidity: i32) -> Self { 
+	pub fn new(hour: u8, temp: f32, feels_like: f32, humidity: i32) -> Self {
 		let temp = (temp * 100.0).round() as i32;
 		let feels_like = (feels_like * 100.0).round() as i32;
 		let wet_bulb = if humidity == 100 {
@@ -121,7 +121,13 @@ impl HourlyTemps {
 			(wet_bulb_temp(temp as f32 / 100.0, humidity as f32) * 100.0).round() as i32
 		};
 		let wet_bulb_is_accurate = (-2000..5000).contains(&temp) && humidity >= 5;
-		Self { hour, temp, feels_like, wet_bulb, _wet_bulb_is_accurate: wet_bulb_is_accurate }
+		Self {
+			hour,
+			temp,
+			feels_like,
+			wet_bulb,
+			_wet_bulb_is_accurate: wet_bulb_is_accurate,
+		}
 	}
 }
 

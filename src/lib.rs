@@ -4,4 +4,4 @@ mod drawing;
 mod from_args;
 pub mod generic_graph;
 pub mod modules;
-mod util;
+pub mod util;

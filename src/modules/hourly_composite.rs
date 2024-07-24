@@ -1,7 +1,10 @@
 use ab_glyph::FontRef;
-use image::{imageops, RgbImage};
+use image::RgbImage;
 
-use crate::modules::{hourly_pop, hourly_precipitation, hourly_temp, hourly_uvi, hourly_wind};
+use crate::{
+	modules::{hourly_pop, hourly_precipitation, hourly_temp, hourly_uvi, hourly_wind},
+	util::composite,
+};
 
 pub fn parse_and_create(font: &FontRef<'static>, args: Vec<String>) -> RgbImage {
 	let mut component_args = args.into_iter();
@@ -25,23 +28,11 @@ pub fn parse_and_create(font: &FontRef<'static>, args: Vec<String>) -> RgbImage 
 	let uvi_args = component_args.next().expect("No uvi arguments");
 	let uvi_args = uvi_args.split(' ').map(String::from).collect::<Vec<_>>();
 	let uvi_graph = hourly_uvi::parse_and_create(font, uvi_args);
-	composite([
+	composite(&[
 		temp_graph,
 		pop_graph,
 		precipitation_graph,
 		wind_graph,
 		uvi_graph,
 	])
-}
-
-fn composite(images: [RgbImage; 5]) -> RgbImage {
-	let max_width = images.iter().map(|image| image.width()).max().unwrap();
-	let total_height = images.iter().map(|image| image.height()).sum::<u32>();
-	let mut canvas = RgbImage::new(max_width, total_height);
-	let mut last_height = 0_u32;
-	for image in images {
-		imageops::replace(&mut canvas, &image, 0, last_height as i64);
-		last_height += image.height();
-	}
-	canvas
 }
