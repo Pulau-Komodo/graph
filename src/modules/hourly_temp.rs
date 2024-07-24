@@ -112,7 +112,9 @@ pub struct HourlyTemps {
 }
 
 impl HourlyTemps {
-	pub fn new(hour: u8, temp: i32, feels_like: i32, humidity: i32) -> Self { 
+	pub fn new(hour: u8, temp: f32, feels_like: f32, humidity: i32) -> Self { 
+		let temp = (temp * 100.0).round() as i32;
+		let feels_like = (feels_like * 100.0).round() as i32;
 		let wet_bulb = if humidity == 100 {
 			temp
 		} else {
