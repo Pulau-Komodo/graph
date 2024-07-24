@@ -51,6 +51,7 @@ pub fn create(font: &FontRef, data: Vec<HourlyWind>) -> RgbImage {
 		FONT_SCALE,
 		PADDING,
 		SPACING.horizontal,
+		true,
 	);
 	horizontal_lines_and_labels(
 		&mut canvas,

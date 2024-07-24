@@ -43,6 +43,7 @@ pub fn create(font: &FontRef<'static>, data: Vec<HourlyPrecipitation>) -> RgbIma
 		horizontal_intervals: MarkIntervals::new(1, 2),
 		vertical_label_range: Range::new(0, max_chart_precipitation as i32),
 		horizontal_labels: data.iter().map(|hour| hour.hour),
+		horizontal_labels_centered: false,
 		font: font.clone(),
 		font_scale: FONT_SCALE,
 	});

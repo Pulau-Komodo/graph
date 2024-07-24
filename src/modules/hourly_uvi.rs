@@ -47,6 +47,7 @@ pub fn create(font: &FontRef, data: Vec<HourlyUvi>) -> RgbImage {
 		FONT_SCALE,
 		PADDING,
 		SPACING.horizontal,
+		true,
 	);
 	horizontal_lines_and_labels(
 		&mut canvas,

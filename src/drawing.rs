@@ -282,52 +282,7 @@ pub fn vertical_lines_and_labels(
 	font_scale: PxScale,
 	padding: Padding,
 	spacing: u32,
-) {
-	let height = canvas.height();
-	for (index, item) in data.enumerate().step_by(intervals.line()) {
-		let x = padding.left + index as u32 * spacing;
-		let line_colour = if index % intervals.label() == 0 {
-			colours::BRIGHTER_GRID_LINES
-		} else {
-			colours::GRID_LINES
-		};
-		draw_line_segment(
-			canvas,
-			Point {
-				x,
-				y: padding.above,
-			},
-			Point {
-				x,
-				y: height - padding.below,
-			},
-			line_colour,
-		);
-		if index % intervals.label() == 0 {
-			let text = &format!("{}", item);
-			let (text_width, _text_height) = imageproc::drawing::text_size(font_scale, &font, text);
-			let text_width = text_width as i32;
-			imageproc::drawing::draw_text_mut(
-				canvas,
-				colours::TEXT,
-				x as i32 - text_width / 2,
-				(height - padding.below + 5) as i32,
-				font_scale,
-				&font,
-				text,
-			);
-		}
-	}
-}
-
-pub fn vertical_lines_and_bar_labels(
-	canvas: &mut RgbImage,
-	data: impl Iterator<Item = u8>,
-	intervals: MarkIntervals,
-	font: &FontRef,
-	font_scale: PxScale,
-	padding: Padding,
-	spacing: u32,
+	center: bool,
 ) {
 	let height = canvas.height();
 	let mut count = 0;
@@ -358,10 +313,15 @@ pub fn vertical_lines_and_bar_labels(
 			let text = &format!("{}", item);
 			let (text_width, _text_height) = imageproc::drawing::text_size(font_scale, &font, text);
 			let text_width = text_width as i32;
+			let x = if center {
+				x as i32 - (text_width - spacing as i32) / 2
+			} else {
+				x as i32 - text_width / 2
+			};
 			imageproc::drawing::draw_text_mut(
 				canvas,
 				colours::TEXT,
-				x as i32 - (text_width - spacing as i32) / 2,
+				x,
 				(height - padding.below + 5) as i32,
 				font_scale,
 				&font,
@@ -370,8 +330,11 @@ pub fn vertical_lines_and_bar_labels(
 		}
 	}
 	count += 1;
-	if count % intervals.line() == 0 {
+	if center && count % intervals.line() == 0 {
 		let x = padding.left + count as u32 * spacing;
+		if x >= canvas.width() {
+			return;
+		}
 		let line_colour = if count % intervals.label() == 0 {
 			colours::BRIGHTER_GRID_LINES
 		} else {

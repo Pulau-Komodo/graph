@@ -48,6 +48,7 @@ where
 	pub horizontal_intervals: MarkIntervals,
 	pub vertical_label_range: Range<i32>,
 	pub horizontal_labels: H,
+	pub horizontal_labels_centered: bool,
 	pub font: FontRef<'static>,
 	pub font_scale: PxScale,
 }
@@ -66,6 +67,7 @@ where
 			self.font_scale,
 			chart.padding,
 			chart.spacing.horizontal,
+			self.horizontal_labels_centered,
 		);
 		horizontal_lines_and_labels(
 			&mut chart.canvas,

@@ -55,6 +55,7 @@ pub fn create(font: &FontRef, data: Vec<HourlyTemps>) -> RgbImage {
 		FONT_SCALE,
 		PADDING,
 		SPACING.horizontal,
+		false,
 	);
 	horizontal_lines_and_labels(
 		&mut canvas,

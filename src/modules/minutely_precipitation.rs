@@ -7,7 +7,7 @@ use crate::{
 	common_types::Range,
 	drawing::{
 		draw_graph_bars, draw_outer_lines, fill_canvas, horizontal_lines_and_labels,
-		vertical_lines_and_bar_labels, MarkIntervals, Padding, Spacing,
+		vertical_lines_and_labels, MarkIntervals, Padding, Spacing,
 	},
 	util::next_multiple,
 };
@@ -42,7 +42,7 @@ pub fn create(font: &FontRef, data: Vec<MinutelyPrecipitation>) -> RgbImage {
 	let mut canvas = RgbImage::new(width, height);
 	fill_canvas(&mut canvas, colours::BACKGROUND);
 	draw_outer_lines(&mut canvas, PADDING);
-	vertical_lines_and_bar_labels(
+	vertical_lines_and_labels(
 		&mut canvas,
 		data.iter().map(|minute| minute.minute),
 		MarkIntervals::new(3, 3),
@@ -50,6 +50,7 @@ pub fn create(font: &FontRef, data: Vec<MinutelyPrecipitation>) -> RgbImage {
 		FONT_SCALE,
 		PADDING,
 		SPACING.horizontal,
+		true,
 	);
 	horizontal_lines_and_labels(
 		&mut canvas,
