@@ -111,6 +111,18 @@ pub struct HourlyTemps {
 	_wet_bulb_is_accurate: bool,
 }
 
+impl HourlyTemps {
+	pub fn new(hour: u8, temp: i32, feels_like: i32, humidity: i32) -> Self { 
+		let wet_bulb = if humidity == 100 {
+			temp
+		} else {
+			(wet_bulb_temp(temp as f32 / 100.0, humidity as f32) * 100.0).round() as i32
+		};
+		let wet_bulb_is_accurate = (-2000..5000).contains(&temp) && humidity >= 5;
+		Self { hour, temp, feels_like, wet_bulb, _wet_bulb_is_accurate: wet_bulb_is_accurate }
+	}
+}
+
 impl FromArgs<4> for HourlyTemps {
 	fn from_args([hour, temp, feels_like, humidity]: [String; 4]) -> Self {
 		let hour = hour.parse().expect("Could not parse an hour argument");
