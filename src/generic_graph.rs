@@ -75,7 +75,7 @@ where
 		horizontal_lines_and_labels(
 			&mut chart.canvas,
 			self.vertical_label_range,
-			MarkIntervals::new(1, 1),
+			self.vertical_intervals,
 			&self.font,
 			self.font_scale,
 			chart.padding,
