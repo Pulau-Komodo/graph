@@ -8,7 +8,7 @@ use crate::{
 	common_types::{MultiPointGradient, Point, Range},
 };
 
-pub fn draw_line_segment(
+pub(crate) fn draw_line_segment(
 	canvas: &mut RgbImage,
 	start: Point<u32>,
 	end: Point<u32>,
@@ -20,7 +20,7 @@ pub fn draw_line_segment(
 }
 
 /// Gradient based on height
-pub fn _draw_line_segment_with_gradient(
+pub(crate) fn _draw_line_segment_with_gradient(
 	canvas: &mut RgbImage,
 	start: Point<u32>,
 	end: Point<u32>,
@@ -34,7 +34,7 @@ pub fn _draw_line_segment_with_gradient(
 }
 
 /// Gradient based on height
-pub fn draw_bar_with_gradient(
+pub(crate) fn draw_bar_with_gradient(
 	canvas: &mut RgbImage,
 	rectangle: Rect,
 	gradient: &MultiPointGradient,
@@ -146,11 +146,11 @@ pub struct Padding {
 
 impl Padding {
 	/** This is just left + right. */
-	pub const fn horizontal(&self) -> u32 {
+	pub(crate) const fn horizontal(&self) -> u32 {
 		self.left + self.right
 	}
 	/** This is just above + below. */
-	pub const fn vertical(&self) -> u32 {
+	pub(crate) const fn vertical(&self) -> u32 {
 		self.above + self.below
 	}
 }
@@ -169,21 +169,21 @@ pub struct MarkIntervals {
 
 impl MarkIntervals {
 	/** Panics if label is not a multiple of line */
-	pub const fn new(line: usize, label: usize) -> Self {
+	pub(crate) const fn new(line: usize, label: usize) -> Self {
 		if label % line != 0 {
 			panic!("Labelling interval needs to be a multiple of line drawing interval.");
 		}
 		Self { line, label }
 	}
-	pub const fn line(&self) -> usize {
+	pub(crate) const fn line(&self) -> usize {
 		self.line
 	}
-	pub const fn label(&self) -> usize {
+	pub(crate) const fn label(&self) -> usize {
 		self.label
 	}
 }
 
-pub fn draw_outer_lines(canvas: &mut RgbImage, padding: Padding) {
+pub(crate) fn draw_outer_lines(canvas: &mut RgbImage, padding: Padding) {
 	let height = canvas.height();
 	let x = padding.left - 1;
 	draw_line_segment(
@@ -214,7 +214,7 @@ pub fn draw_outer_lines(canvas: &mut RgbImage, padding: Padding) {
 	);
 }
 
-pub fn fill_canvas(canvas: &mut RgbImage, colour: Rgb<u8>) {
+pub(crate) fn fill_canvas(canvas: &mut RgbImage, colour: Rgb<u8>) {
 	let width = canvas.width();
 	let height = canvas.height();
 	imageproc::drawing::draw_filled_rect_mut(
@@ -224,7 +224,7 @@ pub fn fill_canvas(canvas: &mut RgbImage, colour: Rgb<u8>) {
 	);
 }
 
-pub fn horizontal_lines_and_labels(
+pub(crate) fn horizontal_lines_and_labels(
 	canvas: &mut RgbImage,
 	data_range: Range<i32>,
 	intervals: MarkIntervals,
@@ -274,7 +274,7 @@ pub fn horizontal_lines_and_labels(
 	}
 }
 
-pub fn vertical_lines_and_labels(
+pub(crate) fn vertical_lines_and_labels(
 	canvas: &mut RgbImage,
 	data: impl Iterator<Item = u8>,
 	intervals: MarkIntervals,
@@ -356,7 +356,7 @@ pub fn vertical_lines_and_labels(
 }
 
 /// Draws the line graph lines onto the canvas.
-pub fn draw_graph_lines(
+pub(crate) fn draw_graph_lines(
 	canvas: &mut RgbImage,
 	data: impl IntoIterator<Item = i32>,
 	colour: Rgb<u8>,
@@ -378,7 +378,7 @@ pub fn draw_graph_lines(
 }
 
 /// Draws the line graph lines onto the canvas with a height-based gradient.
-pub fn _draw_graph_lines_with_gradient(
+pub(crate) fn _draw_graph_lines_with_gradient(
 	canvas: &mut RgbImage,
 	data: impl IntoIterator<Item = i32>,
 	gradient: MultiPointGradient,
@@ -399,7 +399,7 @@ pub fn _draw_graph_lines_with_gradient(
 	}
 }
 
-pub fn draw_graph_bars(
+pub(crate) fn draw_graph_bars(
 	canvas: &mut RgbImage,
 	data: impl IntoIterator<Item = i32>,
 	colour: Rgb<u8>,
@@ -425,7 +425,7 @@ pub fn draw_graph_bars(
 	}
 }
 
-pub fn draw_graph_bars_with_gradient(
+pub(crate) fn draw_graph_bars_with_gradient(
 	canvas: &mut RgbImage,
 	data: impl IntoIterator<Item = i32>,
 	gradient: &MultiPointGradient,

@@ -34,7 +34,7 @@ pub fn parse_and_create(font: &FontRef, args: Vec<String>) -> RgbImage {
 	create(font, data)
 }
 
-pub fn create(font: &FontRef, data: Vec<HourlyTemps>) -> RgbImage {
+pub fn create(font: &FontRef, data: Vec<DailyTemps>) -> RgbImage {
 	let temp_range = data
 		.iter()
 		.flat_map(|day| [day.temp_min, day.temp_max])
@@ -86,7 +86,7 @@ pub fn create(font: &FontRef, data: Vec<HourlyTemps>) -> RgbImage {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct HourlyTemps {
+pub struct DailyTemps {
 	/// Day of the month
 	day: u8,
 	/// Minimum temperature in centidegrees Celsius
@@ -95,7 +95,18 @@ pub struct HourlyTemps {
 	temp_max: i32,
 }
 
-impl FromArgs<3> for HourlyTemps {
+impl DailyTemps {
+	pub fn new(day: u8, temp_min: f32, temp_max: f32) -> Self {
+		let [temp_min, temp_max] = [temp_min, temp_max].map(|temp| (temp * 100.0).round() as i32);
+		Self {
+			day,
+			temp_min,
+			temp_max,
+		}
+	}
+}
+
+impl FromArgs<3> for DailyTemps {
 	fn from_args([day, temp_min, temp_max]: [String; 3]) -> Self {
 		let day = day.parse().expect("Could not parse a day argument");
 		let temp_min = temp_min

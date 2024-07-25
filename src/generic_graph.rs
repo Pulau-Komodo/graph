@@ -5,10 +5,13 @@ use crate::{
 	colours,
 	common_types::{MultiPointGradient, Range},
 	drawing::{
-		draw_graph_bars, draw_graph_bars_with_gradient, draw_outer_lines, fill_canvas,
-		horizontal_lines_and_labels, vertical_lines_and_labels, MarkIntervals, Padding, Spacing,
+		draw_graph_bars, draw_graph_bars_with_gradient, draw_graph_lines, draw_outer_lines,
+		fill_canvas, horizontal_lines_and_labels, vertical_lines_and_labels, MarkIntervals,
+		Padding, Spacing,
 	},
 };
+
+pub type Colour = Rgb<u8>;
 
 pub struct Chart {
 	canvas: RgbImage,
@@ -121,6 +124,31 @@ where
 			&mut chart.canvas,
 			self.data,
 			self.colour,
+			chart.padding,
+			chart.spacing,
+		);
+	}
+}
+
+pub struct Line<D>
+where
+	D: Iterator<Item = i32>,
+{
+	pub colour: Rgb<u8>,
+	pub data: D,
+	pub max: i32,
+}
+
+impl<D> ChartElement for Line<D>
+where
+	D: Iterator<Item = i32>,
+{
+	fn draw(self, chart: &mut Chart) {
+		draw_graph_lines(
+			&mut chart.canvas,
+			self.data,
+			self.colour,
+			self.max,
 			chart.padding,
 			chart.spacing,
 		);
