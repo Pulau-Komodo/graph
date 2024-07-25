@@ -20,9 +20,9 @@ pub struct Chart {
 }
 
 impl Chart {
-	pub fn new(data_len: usize, max_data: u32, spacing: Spacing, padding: Padding) -> Self {
-		let width = data_len as u32 * spacing.horizontal + padding.horizontal();
-		let height = max_data * spacing.vertical / 100 + padding.vertical();
+	pub fn new(data_len: usize, data_range: u32, spacing: Spacing, padding: Padding) -> Self {
+		let width = (data_len as u32 - 1) * spacing.horizontal + padding.horizontal();
+		let height = data_range * spacing.vertical / 100 + padding.vertical();
 		let mut canvas = RgbImage::new(width, height);
 		fill_canvas(&mut canvas, colours::BACKGROUND);
 		Self {
