@@ -2,9 +2,9 @@ use itertools::Itertools;
 use oklab::{oklab_to_srgb, srgb_to_oklab, Oklab, RGB};
 
 #[derive(Debug, Clone, Copy)]
-pub struct Point<T: std::ops::Add + std::ops::Sub> {
-	pub x: T,
-	pub y: T,
+pub(crate) struct Point<T: std::ops::Add + std::ops::Sub> {
+	pub(crate) x: T,
+	pub(crate) y: T,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -33,7 +33,7 @@ impl<T: std::ops::Sub<Output = T> + Ord + Copy> Range<T> {
 }
 
 #[derive(Debug)]
-pub struct GradientPoint {
+pub(crate) struct GradientPoint {
 	/// The point in the gradient where it should be this colour
 	point: u32,
 	/// The colour it should be in oklab
@@ -41,21 +41,21 @@ pub struct GradientPoint {
 }
 
 impl GradientPoint {
-	pub fn from_rgb(point: u32, [r, g, b]: [u8; 3]) -> Self {
+	pub(crate) fn from_rgb(point: u32, [r, g, b]: [u8; 3]) -> Self {
 		let colour = srgb_to_oklab(RGB::new(r, g, b));
 		Self { point, colour }
 	}
-	pub fn point(&self) -> u32 {
+	pub(crate) fn point(&self) -> u32 {
 		self.point
 	}
 }
 
-pub struct MultiPointGradient {
+pub(crate) struct MultiPointGradient {
 	points: Vec<GradientPoint>,
 }
 
 impl MultiPointGradient {
-	pub fn new(points: Vec<GradientPoint>) -> Self {
+	pub(crate) fn new(points: Vec<GradientPoint>) -> Self {
 		if points
 			.iter()
 			.tuple_windows()
@@ -65,7 +65,7 @@ impl MultiPointGradient {
 		}
 		Self { points }
 	}
-	pub fn get_colour(&self, point: u32) -> [u8; 3] {
+	pub(crate) fn get_colour(&self, point: u32) -> [u8; 3] {
 		let (start, end) = self
 			.points
 			.iter()

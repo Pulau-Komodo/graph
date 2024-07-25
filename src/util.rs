@@ -3,7 +3,7 @@ use image::{codecs::png::PngEncoder, imageops, ColorType, ImageEncoder, RgbImage
 use crate::common_types::Range;
 
 /// The highest value the chart will include.
-pub(crate) fn next_multiple(highest: i32, interval: i32) -> i32 {
+pub fn next_multiple(highest: i32, interval: i32) -> i32 {
 	let interval = interval * 100;
 	let round_up = match highest.rem_euclid(interval) {
 		0 => 0,
@@ -13,7 +13,7 @@ pub(crate) fn next_multiple(highest: i32, interval: i32) -> i32 {
 }
 
 /// Get the lowest and highest values that the chart will include.
-pub(crate) fn previous_and_next_multiple(range: Range<i32>, interval: i32) -> Range<i32> {
+pub fn previous_and_next_multiple(range: Range<i32>, interval: i32) -> Range<i32> {
 	let interval = interval * 100;
 	let round_up = match range.end().rem_euclid(interval) {
 		0 => 0,

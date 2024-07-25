@@ -1,5 +1,5 @@
 mod colours;
-mod common_types;
+pub mod common_types;
 pub mod drawing;
 mod from_args;
 pub mod generic_graph;
