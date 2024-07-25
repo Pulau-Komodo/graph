@@ -169,7 +169,7 @@ pub struct MarkIntervals {
 
 impl MarkIntervals {
 	/** Panics if label is not a multiple of line */
-	pub(crate) const fn new(line: usize, label: usize) -> Self {
+	pub const fn new(line: usize, label: usize) -> Self {
 		if label % line != 0 {
 			panic!("Labelling interval needs to be a multiple of line drawing interval.");
 		}
