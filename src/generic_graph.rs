@@ -1,5 +1,7 @@
 use ab_glyph::{FontRef, PxScale};
-use image::{Rgb, RgbImage};
+use image::RgbImage;
+
+pub use image::Rgb;
 
 use crate::{
 	colours,
@@ -10,8 +12,6 @@ use crate::{
 		Padding, Spacing,
 	},
 };
-
-pub type Colour = Rgb<u8>;
 
 pub struct Chart {
 	canvas: RgbImage,
