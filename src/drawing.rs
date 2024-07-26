@@ -451,6 +451,7 @@ pub(crate) fn draw_graph_bars_with_gradient(
 	}
 }
 
+/// Like bars, but just the top, including skipping any 0-height ones.
 pub(crate) fn draw_horizontal_lines(
 	canvas: &mut RgbImage,
 	data: impl IntoIterator<Item = i32>,
@@ -462,6 +463,9 @@ pub(crate) fn draw_horizontal_lines(
 	for (index, value) in data.into_iter().enumerate() {
 		let x_offset = padding.left + index as u32 * spacing.horizontal;
 		let bar_height = value as u32 * spacing.vertical / 100;
+		if bar_height == 0 {
+			continue;
+		}
 		draw_filled_rect_mut(
 			canvas,
 			Rect::at(
