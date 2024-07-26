@@ -32,8 +32,8 @@ impl<T: std::ops::Sub<Output = T> + Ord + Copy> Range<T> {
 	}
 }
 
-#[derive(Debug)]
-pub(crate) struct GradientPoint {
+#[derive(Debug, Clone)]
+pub struct GradientPoint {
 	/// The point in the gradient where it should be this colour
 	point: u32,
 	/// The colour it should be in oklab
@@ -41,7 +41,7 @@ pub(crate) struct GradientPoint {
 }
 
 impl GradientPoint {
-	pub(crate) fn from_rgb(point: u32, [r, g, b]: [u8; 3]) -> Self {
+	pub fn from_rgb(point: u32, [r, g, b]: [u8; 3]) -> Self {
 		let colour = srgb_to_oklab(RGB::new(r, g, b));
 		Self { point, colour }
 	}
@@ -50,12 +50,13 @@ impl GradientPoint {
 	}
 }
 
-pub(crate) struct MultiPointGradient {
+#[derive(Debug, Clone)]
+pub struct MultiPointGradient {
 	points: Vec<GradientPoint>,
 }
 
 impl MultiPointGradient {
-	pub(crate) fn new(points: Vec<GradientPoint>) -> Self {
+	pub fn new(points: Vec<GradientPoint>) -> Self {
 		if points
 			.iter()
 			.tuple_windows()
