@@ -450,3 +450,26 @@ pub(crate) fn draw_graph_bars_with_gradient(
 		);
 	}
 }
+
+pub(crate) fn draw_horizontal_lines(
+	canvas: &mut RgbImage,
+	data: impl IntoIterator<Item = i32>,
+	colour: Rgb<u8>,
+	padding: Padding,
+	spacing: Spacing,
+) {
+	let height = canvas.height();
+	for (index, value) in data.into_iter().enumerate() {
+		let x_offset = padding.left + index as u32 * spacing.horizontal;
+		let bar_height = value as u32 * spacing.vertical / 100;
+		draw_filled_rect_mut(
+			canvas,
+			Rect::at(
+				(x_offset + 1) as i32,
+				(height - padding.below - bar_height) as i32,
+			)
+			.of_size(spacing.horizontal - 1, 1),
+			colour,
+		);
+	}
+}

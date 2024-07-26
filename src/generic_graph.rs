@@ -7,9 +7,9 @@ use crate::{
 	colours,
 	common_types::{MultiPointGradient, Range},
 	drawing::{
-		draw_graph_bars, draw_graph_bars_with_gradient, draw_graph_lines, draw_outer_lines,
-		fill_canvas, horizontal_lines_and_labels, vertical_lines_and_labels, MarkIntervals,
-		Padding, Spacing,
+		draw_graph_bars, draw_graph_bars_with_gradient, draw_graph_lines, draw_horizontal_lines,
+		draw_outer_lines, fill_canvas, horizontal_lines_and_labels, vertical_lines_and_labels,
+		MarkIntervals, Padding, Spacing,
 	},
 };
 
@@ -121,6 +121,29 @@ where
 {
 	fn draw(self, chart: &mut Chart) {
 		draw_graph_bars(
+			&mut chart.canvas,
+			self.data,
+			self.colour,
+			chart.padding,
+			chart.spacing,
+		);
+	}
+}
+
+pub struct HorizontalLines<D>
+where
+	D: Iterator<Item = i32>,
+{
+	pub colour: Rgb<u8>,
+	pub data: D,
+}
+
+impl<D> ChartElement for HorizontalLines<D>
+where
+	D: Iterator<Item = i32>,
+{
+	fn draw(self, chart: &mut Chart) {
+		draw_horizontal_lines(
 			&mut chart.canvas,
 			self.data,
 			self.colour,
