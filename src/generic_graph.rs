@@ -92,6 +92,15 @@ where
 	data: D,
 }
 
+impl<D> GradientBars<D>
+where
+	D: Iterator<Item = i32>,
+{
+	pub fn new(gradient: MultiPointGradient, data: D) -> Self {
+		Self { gradient, data }
+	}
+}
+
 impl<D> ChartElement for GradientBars<D>
 where
 	D: Iterator<Item = i32>,
