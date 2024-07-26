@@ -88,17 +88,8 @@ pub struct GradientBars<D>
 where
 	D: Iterator<Item = i32>,
 {
-	gradient: MultiPointGradient,
-	data: D,
-}
-
-impl<D> GradientBars<D>
-where
-	D: Iterator<Item = i32>,
-{
-	pub fn new(gradient: MultiPointGradient, data: D) -> Self {
-		Self { gradient, data }
-	}
+	pub gradient: MultiPointGradient,
+	pub data: D,
 }
 
 impl<D> ChartElement for GradientBars<D>
