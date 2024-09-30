@@ -177,3 +177,34 @@ where
 		);
 	}
 }
+
+pub struct TextSegment<'s> {
+	pub text: &'s str,
+	pub color: Rgb<u8>,
+}
+
+pub struct Label<'s, 'f> {
+	pub text_segments: &'s [TextSegment<'s>],
+	pub font: FontRef<'f>,
+	pub font_scale: PxScale,
+	pub distance_from_top: i32,
+}
+
+impl<'s, 'f> ChartElement for Label<'s, 'f> {
+	fn draw(self, chart: &mut Chart) {
+		let mut cursor = chart.padding.left as i32;
+		for segment in self.text_segments {
+			imageproc::drawing::draw_text_mut(
+				&mut chart.canvas,
+				segment.color,
+				cursor,
+				self.distance_from_top,
+				self.font_scale,
+				&self.font,
+				segment.text,
+			);
+			let (text_width, _text_height) = imageproc::drawing::text_size(self.font_scale, &self.font, segment.text);
+			cursor += text_width as i32;
+		}
+	}
+}
