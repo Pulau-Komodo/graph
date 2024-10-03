@@ -11,12 +11,13 @@ use crate::{
 		draw_outer_lines, fill_canvas, horizontal_lines_and_labels, vertical_lines_and_labels,
 		MarkIntervals, Padding, Spacing,
 	},
+	text_box::TextSegment,
 };
 
 pub struct Chart {
-	canvas: RgbImage,
-	padding: Padding,
-	spacing: Spacing,
+	pub(crate) canvas: RgbImage,
+	pub(crate) padding: Padding,
+	pub(crate) spacing: Spacing,
 }
 
 impl Chart {
@@ -178,11 +179,6 @@ where
 	}
 }
 
-pub struct TextSegment<'s> {
-	pub text: &'s str,
-	pub color: Rgb<u8>,
-}
-
 pub struct Label<'s, 'f> {
 	pub text_segments: &'s [TextSegment<'s>],
 	pub font: FontRef<'f>,
@@ -203,7 +199,8 @@ impl<'s, 'f> ChartElement for Label<'s, 'f> {
 				&self.font,
 				segment.text,
 			);
-			let (text_width, _text_height) = imageproc::drawing::text_size(self.font_scale, &self.font, segment.text);
+			let (text_width, _text_height) =
+				imageproc::drawing::text_size(self.font_scale, &self.font, segment.text);
 			cursor += text_width as i32;
 		}
 	}
