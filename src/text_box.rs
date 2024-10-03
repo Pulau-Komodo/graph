@@ -50,12 +50,10 @@ impl<'f, 's> TextBox<'f, 's> {
 				.chain([segment.text.len()])
 			{
 				let segment_width =
-					drawing::text_size(font_scale, &font, dbg!(&segment.text[start_index..index]))
-						.0;
+					drawing::text_size(font_scale, &font, &segment.text[start_index..index]).0;
 				let line_width = current_line_width + segment_width;
 				if line_width > width {
-					let new_segment =
-						dbg!(&segment.text[dbg!(start_index)..dbg!(prev_space_index)]);
+					let new_segment = &segment.text[start_index..prev_space_index];
 					if new_segment.is_empty() {
 						if !current_line.is_empty() {
 							lines.push(current_line);
@@ -76,7 +74,7 @@ impl<'f, 's> TextBox<'f, 's> {
 					prev_space_index = index;
 				}
 			}
-			let remainder = dbg!(&segment.text[start_index..]);
+			let remainder = &segment.text[start_index..];
 			if !remainder.is_empty() {
 				let segment_width = drawing::text_size(font_scale, &font, remainder).0;
 				current_line_width += segment_width;
