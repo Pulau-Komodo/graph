@@ -24,6 +24,8 @@ struct LineWriter<'s> {
 	lines: Vec<Vec<TextSegment<'s>>>,
 	current_line_width: u32,
 	can_break: bool,
+	current_word: Vec<TextSegment<'s>>,
+	current_word_width: u32,
 }
 
 impl<'s> LineWriter<'s> {
@@ -32,6 +34,8 @@ impl<'s> LineWriter<'s> {
 			lines: vec![Vec::new()],
 			current_line_width: 0,
 			can_break: true,
+			current_word: Vec::new(),
+			current_word_width: 0,
 		}
 	}
 	fn current_line(&self) -> &Vec<TextSegment<'s>> {
@@ -65,6 +69,16 @@ impl<'s> LineWriter<'s> {
 		self.current_line_mut().push(segment);
 		self.current_line_width += width;
 	}
+	fn add_to_current_word(&mut self, segment: TextSegment<'s>, width: u32) {
+		self.current_word.push(segment);
+		self.current_word_width += width;
+	}
+	fn add_current_word(&mut self) {
+		for segment in std::mem::take(&mut self.current_word).drain(..) {
+			self.current_line_mut().push(segment);
+		}
+		self.current_line_width += std::mem::take(&mut self.current_line_width);
+	}
 	fn add_segment(
 		&mut self,
 		segment: TextSegment<'s>,
@@ -80,6 +94,7 @@ impl<'s> LineWriter<'s> {
 			.filter_map(|(index, char)| (char == ' ').then_some(index))
 		{
 			self.can_break = true;
+			self.add_current_word();
 			let segment_width =
 				drawing::text_size(scale, &font, &segment.text[start_index..index]).0;
 			let line_width = self.current_line_width + segment_width;
@@ -109,11 +124,14 @@ impl<'s> LineWriter<'s> {
 		let remainder = &segment.text[start_index..];
 		if !remainder.is_empty() {
 			let segment_width = drawing::text_size(scale, &font, remainder).0;
+			if self.can_break {
+				self.add_current_word();
+			}
 			let line_width = self.current_line_width + segment_width;
 			if line_width > width && self.can_break && !self.current_line().is_empty() {
 				self.new_line();
 			}
-			self.add_to_current_line(
+			self.add_to_current_word(
 				TextSegment {
 					text: remainder,
 					color: segment.color,
@@ -149,6 +167,7 @@ impl<'f, 's> TextBox<'f, 's> {
 			lines.add_segment(*segment, &font, font_scale, width);
 		}
 
+		lines.add_current_word();
 		if lines.current_line().is_empty() {
 			lines.lines.pop();
 		} else {
